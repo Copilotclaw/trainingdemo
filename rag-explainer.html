@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Explained — Simple RAG Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/roughjs@4.6.6/bundled/rough.js"></script>
+<style>
+  :root {
+    --yellow: #fff9c4;
+    --blue: #dbeafe;
+    --green: #dcfce7;
+    --pink: #fce7f3;
+    --purple: #ede9fe;
+    --orange: #ffedd5;
+    --ink: #1a1a2e;
+    --accent: #6c63ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #fafaf8;
+    color: var(--ink);
+    line-height: 1.6;
+  }
+  .hero {
+    background: var(--yellow);
+    border-bottom: 3px solid var(--ink);
+    padding: 3rem 2rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+  .hero-content { position: relative; z-index: 1; }
+  .hero h1 {
+    font-family: 'Caveat', cursive;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .hero p {
+    font-family: 'Caveat', cursive;
+    font-size: 1.4rem;
+    color: #444;
+    max-width: 600px;
+    margin: 0 auto 1.5rem;
+  }
+  .badge-row {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .badge-row a img { border-radius: 4px; }
+  .section {
+    max-width: 900px;
+    margin: 3rem auto;
+    padding: 0 1.5rem;
+  }
+  .section-title {
+    font-family: 'Caveat', cursive;
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card {
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+  .card.yellow { background: var(--yellow); }
+  .card.blue { background: var(--blue); }
+  .card.green { background: var(--green); }
+  .card.pink { background: var(--pink); }
+  .card.purple { background: var(--purple); }
+  .card.orange { background: var(--orange); }
+  .card h3 {
+    font-family: 'Caveat', cursive;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+  }
+  .card p { font-size: 0.97rem; color: #333; }
+  .canvas-wrap {
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+  canvas.diagram {
+    display: block;
+    width: 100%;
+  }
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.2rem;
+  }
+  .step-card {
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 1.2rem 1.2rem 1rem;
+    position: relative;
+  }
+  .step-num {
+    font-family: 'Caveat', cursive;
+    font-size: 1.2rem;
+    font-weight: 700;
+    background: var(--ink);
+    color: #fff;
+    display: inline-block;
+    width: 2rem; height: 2rem;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 2rem;
+    margin-bottom: 0.4rem;
+  }
+  .step-card h4 {
+    font-family: 'Caveat', cursive;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+  }
+  .step-card p { font-size: 0.9rem; color: #444; }
+  code, pre {
+    font-family: 'Courier New', monospace;
+    font-size: 0.88rem;
+  }
+  pre {
+    background: #1a1a2e;
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 1.2rem;
+    overflow-x: auto;
+    border: 2px solid #333;
+    margin: 1rem 0;
+    white-space: pre;
+  }
+  .hl-comment { color: #6b9e6b; }
+  .hl-kw { color: #c792ea; }
+  .hl-str { color: #c3e88d; }
+  .hl-fn { color: #82aaff; }
+  .hl-num { color: #f78c6c; }
+  .concept-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .concept-pill {
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    font-family: 'Caveat', cursive;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+  }
+  .sticky-note {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: var(--yellow);
+    border: 2.5px solid var(--ink);
+    border-radius: 10px;
+    padding: 0.8rem 1.1rem;
+    font-family: 'Caveat', cursive;
+    font-size: 1.1rem;
+    max-width: 220px;
+    transform: rotate(2deg);
+    box-shadow: 4px 4px 0 var(--ink);
+    z-index: 100;
+  }
+  .footer {
+    text-align: center;
+    padding: 2rem 1rem 3rem;
+    font-family: 'Caveat', cursive;
+    font-size: 1.2rem;
+    color: #888;
+    border-top: 2px dashed #ccc;
+    margin-top: 3rem;
+  }
+  @media (max-width: 600px) {
+    .steps-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero" id="hero">
+  <canvas id="hero-bg" style="position:absolute;top:0;left:0;pointer-events:none;"></canvas>
+  <div class="hero-content">
+    <h1>🔍 RAG Explained</h1>
+    <p>Retrieval-Augmented Generation — from zero to working pipeline in &lt; 50 lines of Python</p>
+    <div class="badge-row">
+      <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo.ipynb" target="_blank">
+        <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" height="30">
+      </a>
+      <a href="simple-rag-demo.ipynb" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:2px solid #1a1a2e;border-radius:4px;padding:4px 10px;text-decoration:none;color:#1a1a2e;font-size:0.85rem;font-weight:600;">
+        📔 View Notebook
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- WHAT IS RAG -->
+<div class="section">
+  <div class="section-title">🤔 What is RAG?</div>
+  <div class="card yellow">
+    <h3>The Problem with Plain LLMs</h3>
+    <p>LLMs are trained on static data — they don't know about your documents, your codebase, or anything that happened after their training cutoff. RAG solves this by <strong>fetching relevant information at query time</strong> and handing it to the LLM as context.</p>
+  </div>
+  <div class="card blue">
+    <h3>The RAG Idea</h3>
+    <p>Instead of fine-tuning (expensive, slow), you <strong>retrieve</strong> the right chunks from your knowledge base and <strong>augment</strong> the prompt. The LLM can then answer with up-to-date, specific information — without ever being retrained.</p>
+  </div>
+
+  <!-- Flow diagram -->
+  <div class="canvas-wrap">
+    <canvas id="flow-canvas" class="diagram" height="140"></canvas>
+  </div>
+</div>
+
+<!-- THE PIPELINE -->
+<div class="section">
+  <div class="section-title">⚙️ The 5-Step Pipeline</div>
+  <div class="steps-grid">
+    <div class="step-card" style="background:var(--blue);">
+      <div class="step-num">1</div>
+      <h4>📚 Load Documents</h4>
+      <p>Start with raw text — sentences, paragraphs, or chunks from your knowledge base. These become the facts your system can retrieve.</p>
+    </div>
+    <div class="step-card" style="background:var(--green);">
+      <div class="step-num">2</div>
+      <h4>🔢 Embed</h4>
+      <p>A sentence-transformer model converts each text chunk into a <strong>384-dimensional vector</strong> (a list of numbers). Similar meanings → similar vectors.</p>
+    </div>
+    <div class="step-card" style="background:var(--yellow);">
+      <div class="step-num">3</div>
+      <h4>🗂️ Index (FAISS)</h4>
+      <p>All vectors go into a FAISS index — a lightning-fast search engine for vectors. It enables nearest-neighbor lookup in milliseconds.</p>
+    </div>
+    <div class="step-card" style="background:var(--orange);">
+      <div class="step-num">4</div>
+      <h4>🔎 Query</h4>
+      <p>Embed the user's question with the same model, then ask FAISS: <em>which stored vectors are closest?</em> Those documents are your context.</p>
+    </div>
+    <div class="step-card" style="background:var(--purple);">
+      <div class="step-num">5</div>
+      <h4>💬 Generate</h4>
+      <p>Stuff the retrieved chunks + the user question into an LLM prompt. The model answers using real, relevant context — not hallucination.</p>
+    </div>
+  </div>
+</div>
+
+<!-- EMBEDDING EXPLAINER -->
+<div class="section">
+  <div class="section-title">🔢 Embeddings Visualized</div>
+  <div class="canvas-wrap">
+    <canvas id="embed-canvas" class="diagram" height="200"></canvas>
+  </div>
+  <div class="card green">
+    <h3>Why Vectors Work</h3>
+    <p>The magic: <strong>"Local RAG"</strong> and <strong>"runs on your machine"</strong> encode to nearby points in 384D space, even though the words are different. The distance between vectors = semantic distance between meanings. FAISS searches this space in O(log n) time.</p>
+  </div>
+</div>
+
+<!-- CODE WALKTHROUGH -->
+<div class="section">
+  <div class="section-title">💻 Code Walkthrough</div>
+
+  <div class="card blue">
+    <h3>Step 2 — Embed Documents</h3>
+    <p>Load a pretrained model (~80MB) and embed all documents in one batch call:</p>
+  </div>
+<pre><span class="hl-kw">from</span> sentence_transformers <span class="hl-kw">import</span> SentenceTransformer
+<span class="hl-kw">import</span> numpy <span class="hl-kw">as</span> np
+
+model = SentenceTransformer(<span class="hl-str">'all-MiniLM-L6-v2'</span>)  <span class="hl-comment"># tiny but mighty</span>
+embeddings = model.encode(documents).astype(<span class="hl-str">'float32'</span>)
+<span class="hl-comment"># shape → (8, 384) — 8 docs, 384 dimensions each</span></pre>
+
+  <div class="card yellow">
+    <h3>Step 3 — Build FAISS Index</h3>
+    <p>Create a flat L2 index and add all embeddings in one shot:</p>
+  </div>
+<pre><span class="hl-kw">import</span> faiss
+
+index = faiss.IndexFlatL2(<span class="hl-num">384</span>)  <span class="hl-comment"># dimension must match embedding size</span>
+index.add(embeddings)           <span class="hl-comment"># O(1) per document</span>
+<span class="hl-comment"># Now index.ntotal == 8</span></pre>
+
+  <div class="card orange">
+    <h3>Step 4 — Search</h3>
+    <p>Turn a user question into a vector, find the top-3 closest documents:</p>
+  </div>
+<pre><span class="hl-kw">def</span> <span class="hl-fn">search</span>(query: str, top_k: int = <span class="hl-num">3</span>):
+    query_vec = model.encode([query]).astype(<span class="hl-str">'float32'</span>)
+    distances, indices = index.search(query_vec, top_k)
+    <span class="hl-kw">return</span> [(documents[i], distances[<span class="hl-num">0</span>][j]) <span class="hl-kw">for</span> j, i <span class="hl-kw">in</span> enumerate(indices[<span class="hl-num">0</span>])]
+
+results = search(<span class="hl-str">"How does local RAG work without internet?"</span>)
+<span class="hl-comment"># → [("Local RAG runs entirely on your machine...", 0.14), ...]</span></pre>
+
+  <div class="card purple">
+    <h3>Step 5 — Build Prompt</h3>
+    <p>Insert the retrieved context into the LLM prompt template:</p>
+  </div>
+<pre><span class="hl-kw">def</span> <span class="hl-fn">build_prompt</span>(query: str) -> str:
+    context = <span class="hl-str">'\n'</span>.join([f<span class="hl-str">'- {doc}'</span> <span class="hl-kw">for</span> doc, _ <span class="hl-kw">in</span> search(query)])
+    <span class="hl-kw">return</span> f<span class="hl-str">"""Context:
+{context}
+
+Question: {query}
+
+Answer:"""</span>
+
+<span class="hl-comment"># In a real system, pass this to ollama.chat() or openai.chat.completions.create()</span></pre>
+</div>
+
+<!-- KEY CONCEPTS -->
+<div class="section">
+  <div class="section-title">�� Key Concepts</div>
+  <div class="concept-row">
+    <div class="concept-pill" style="background:var(--blue);">📐 L2 Distance<br><small style="font-size:0.85rem;font-family:Inter">Euclidean distance between vectors. Lower = more similar.</small></div>
+    <div class="concept-pill" style="background:var(--green);">✂️ Chunking<br><small style="font-size:0.85rem;font-family:Inter">Split large docs into smaller pieces before embedding.</small></div>
+    <div class="concept-pill" style="background:var(--yellow);">⚡ FAISS<br><small style="font-size:0.85rem;font-family:Inter">Meta's library for billion-scale vector search.</small></div>
+    <div class="concept-pill" style="background:var(--orange);">🤗 Sentence Transformers<br><small style="font-size:0.85rem;font-family:Inter">Pretrained models that encode text to dense vectors.</small></div>
+    <div class="concept-pill" style="background:var(--purple);">🏠 Local RAG<br><small style="font-size:0.85rem;font-family:Inter">Everything on your machine. No API, no data leaks.</small></div>
+    <div class="concept-pill" style="background:var(--pink);">🦙 Ollama<br><small style="font-size:0.85rem;font-family:Inter">Run Llama 3 / Mistral locally for the generation step.</small></div>
+  </div>
+</div>
+
+<!-- EXERCISES -->
+<div class="section">
+  <div class="section-title">🏋️ Exercises</div>
+  <div class="card pink">
+    <h3>Try These in the Notebook</h3>
+    <p style="margin-bottom:0.5rem;">1. <strong>Add your own documents</strong> — 5 facts about a topic you know. Query them.</p>
+    <p style="margin-bottom:0.5rem;">2. <strong>Change top_k</strong> — what happens with top_k=1 vs top_k=5?</p>
+    <p style="margin-bottom:0.5rem;">3. <strong>Off-topic queries</strong> — ask something unrelated. What does FAISS return? Why?</p>
+    <p style="margin-bottom:0.5rem;">4. <strong>Go local</strong> — swap the fake prompt with a real Ollama call: <code>import ollama; ollama.chat(model='llama3', messages=[...])</code></p>
+    <p>5. <strong>Persist the index</strong> — save with <code>faiss.write_index(index, 'my.index')</code>, load back.</p>
+  </div>
+</div>
+
+<!-- STICKY NOTE -->
+<div class="sticky-note">
+  🦃 Built by Crunch<br>
+  <a href="https://github.com/Copilotclaw/copilotclaw" style="color:var(--ink);">github.com/Copilotclaw</a>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  Made with rough.js + Caveat font + love by 🦃 Crunch &nbsp;·&nbsp;
+  <a href="https://github.com/Copilotclaw/trainingdemo" style="color:#888;">trainingdemo repo</a>
+</div>
+
+<script>
+// ── rough.js diagrams ────────────────────────────────────────────────────────
+
+function initHeroBg() {
+  const el = document.getElementById('hero-bg');
+  const parent = el.parentElement;
+  el.width = parent.offsetWidth;
+  el.height = parent.offsetHeight;
+  const rc = rough.canvas(el);
+  const opts = { roughness: 2.5, strokeWidth: 1.5 };
+  const w = el.width, h = el.height;
+  // scatter some shapes
+  rc.circle(w*0.05, h*0.15, 60, {...opts, fill:'rgba(255,200,100,0.3)', fillStyle:'hachure', stroke:'#c8b400'});
+  rc.rectangle(w*0.85, h*0.05, 80, 50, {...opts, fill:'rgba(100,200,255,0.2)', fillStyle:'cross-hatch', stroke:'#5599cc'});
+  rc.circle(w*0.92, h*0.75, 40, {...opts, fill:'rgba(200,100,200,0.2)', fillStyle:'hachure', stroke:'#aa55aa'});
+  rc.rectangle(w*0.02, h*0.6, 50, 50, {...opts, fill:'rgba(100,255,100,0.2)', fillStyle:'dots', stroke:'#44aa44'});
+  rc.ellipse(w*0.5, h*0.85, 120, 30, {...opts, fill:'rgba(255,150,50,0.15)', fillStyle:'hachure', stroke:'#dd8800'});
+}
+
+function drawFlow() {
+  const canvas = document.getElementById('flow-canvas');
+  const W = canvas.parentElement.offsetWidth;
+  canvas.width = W;
+  canvas.height = 140;
+  const rc = rough.canvas(canvas);
+  const ctx = canvas.getContext('2d');
+  ctx.font = '600 13px Inter';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const steps = [
+    { label: 'Your\nQuestion', color: '#dbeafe', stroke: '#3b82f6' },
+    { label: 'Embed\nQuery', color: '#fce7f3', stroke: '#ec4899' },
+    { label: 'FAISS\nSearch', color: '#dcfce7', stroke: '#16a34a' },
+    { label: 'Retrieved\nChunks', color: '#ffedd5', stroke: '#ea580c' },
+    { label: 'LLM\nPrompt', color: '#ede9fe', stroke: '#7c3aed' },
+    { label: 'Answer', color: '#fff9c4', stroke: '#ca8a04' },
+  ];
+
+  const n = steps.length;
+  const pad = 20;
+  const boxW = Math.min(110, (W - pad*2) / n - 12);
+  const boxH = 60;
+  const totalW = n * (boxW + 10) - 10;
+  const startX = (W - totalW) / 2;
+  const y = 70;
+
+  steps.forEach((s, i) => {
+    const x = startX + i * (boxW + 10);
+    rc.rectangle(x, y - boxH/2, boxW, boxH, {
+      roughness: 1.8, strokeWidth: 2,
+      fill: s.color, fillStyle: 'solid', stroke: s.stroke
+    });
+    ctx.fillStyle = '#1a1a2e';
+    const lines = s.label.split('\n');
+    lines.forEach((line, li) => {
+      ctx.fillText(line, x + boxW/2, y - 7 + li * 16);
+    });
+    if (i < n - 1) {
+      const ax = x + boxW + 2, ay = y;
+      rc.line(ax, ay, ax + 8, ay, { roughness: 1, strokeWidth: 2, stroke: '#555' });
+      // arrowhead
+      ctx.beginPath();
+      ctx.moveTo(ax + 8, ay);
+      ctx.lineTo(ax + 3, ay - 4);
+      ctx.lineTo(ax + 3, ay + 4);
+      ctx.fillStyle = '#555';
+      ctx.fill();
+    }
+  });
+}
+
+function drawEmbedDiagram() {
+  const canvas = document.getElementById('embed-canvas');
+  const W = canvas.parentElement.offsetWidth;
+  canvas.width = W;
+  canvas.height = 200;
+  const rc = rough.canvas(canvas);
+  const ctx = canvas.getContext('2d');
+  ctx.textBaseline = 'middle';
+
+  const docs = [
+    { text: '"Local RAG runs on machine"', x: 40, y: 40 },
+    { text: '"FAISS is by Meta"', x: 40, y: 90 },
+    { text: '"Runs without internet"', x: 40, y: 140 },
+    { text: '"Ollama runs locally"', x: 40, y: 190 },
+  ];
+  const vecs = [
+    { x: W*0.55, y: 40 },
+    { x: W*0.58, y: 90 },
+    { x: W*0.56, y: 140 },
+    { x: W*0.59, y: 155 },
+  ];
+
+  const colors = ['#dbeafe','#dcfce7','#ffedd5','#fce7f3'];
+
+  docs.forEach((d, i) => {
+    rc.rectangle(d.x, d.y - 14, Math.min(220, W*0.35), 28, {
+      roughness: 1.5, strokeWidth: 1.5, fill: colors[i], fillStyle: 'solid', stroke: '#555'
+    });
+    ctx.font = '500 11px Inter';
+    ctx.fillStyle = '#222';
+    ctx.textAlign = 'left';
+    ctx.fillText(d.text, d.x + 6, d.y);
+  });
+
+  // encoder box
+  const encX = W * 0.42, encY = 70, encW = 80, encH = 120;
+  rc.rectangle(encX, encY, encW, encH, {
+    roughness: 1.8, strokeWidth: 2, fill: '#ede9fe', fillStyle: 'hachure', stroke: '#7c3aed'
+  });
+  ctx.font = 'bold 12px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#4c1d95';
+  ctx.fillText('Encoder', encX + encW/2, encY + 50);
+  ctx.font = '10px Inter';
+  ctx.fillStyle = '#6d28d9';
+  ctx.fillText('all-MiniLM-L6-v2', encX + encW/2, encY + 68);
+  ctx.fillText('384 dims', encX + encW/2, encY + 84);
+
+  // vectors (simplified as small bars)
+  vecs.forEach((v, i) => {
+    const bw = 5;
+    for (let j = 0; j < 8; j++) {
+      const h = 4 + Math.sin(j * 1.2 + i) * 3;
+      rc.rectangle(v.x + j * (bw+1), v.y - h/2, bw, h, {
+        roughness: 0.5, strokeWidth: 1, fill: colors[i], fillStyle: 'solid', stroke: '#666'
+      });
+    }
+    ctx.font = '9px Inter';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#888';
+    ctx.fillText('[0.12, -0.34, 0.81, ...]', v.x + 9*6 + 4, v.y);
+  });
+
+  // arrows from docs to encoder
+  docs.forEach((d, i) => {
+    rc.line(d.x + Math.min(220, W*0.35) + 2, d.y, encX - 2, encY + 30 + i*18, {
+      roughness: 1.2, strokeWidth: 1.5, stroke: '#aaa'
+    });
+  });
+
+  // arrows from encoder to vecs
+  vecs.forEach((v, i) => {
+    rc.line(encX + encW + 2, encY + 30 + i*18, v.x - 2, v.y, {
+      roughness: 1.2, strokeWidth: 1.5, stroke: '#aaa'
+    });
+  });
+
+  // label similar group
+  rc.ellipse(W*0.72, 125, 80, 130, {
+    roughness: 2, strokeWidth: 2, stroke: '#ea580c', fillStyle: 'none'
+  });
+  ctx.font = '600 11px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ea580c';
+  ctx.fillText('similar →', W*0.72, 10);
+  ctx.fillText('close in', W*0.72, 180);
+  ctx.fillText('vector space', W*0.72, 193);
+}
+
+// Init on load
+window.addEventListener('load', () => {
+  initHeroBg();
+  drawFlow();
+  drawEmbedDiagram();
+});
+window.addEventListener('resize', () => {
+  initHeroBg();
+  drawFlow();
+  drawEmbedDiagram();
+});
+</script>
+</body>
+</html>
