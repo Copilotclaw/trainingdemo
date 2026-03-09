@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🔍 RAG Explained — Simple RAG Demo</title>
+<title>Build Your First RAG System — Explainer</title>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.min.js"></script>
 <style>
@@ -20,650 +20,268 @@
     --border: #e5e7eb;
     --code-bg: #1e1e2e;
     --code-fg: #cdd6f4;
+    --c-yellow: #fef9c3;
+    --c-blue: #dbeafe;
+    --c-green: #dcfce7;
+    --c-pink: #fce7f3;
+    --c-purple: #ede9fe;
+    --c-orange: #ffedd5;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    line-height: 1.7;
-  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); line-height: 1.7; }
   a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
 
   nav {
     position: sticky; top: 0; z-index: 100;
-    background: rgba(250,249,246,0.95);
-    backdrop-filter: blur(8px);
+    background: rgba(250,249,246,0.95); backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--border);
-    padding: 0.75rem 2rem;
-    display: flex; align-items: center; gap: 2rem;
+    padding: 0.75rem 2rem; display: flex; align-items: center; gap: 2rem;
   }
   nav .brand { font-family: 'Caveat', cursive; font-size: 1.4rem; font-weight: 700; color: var(--accent); }
-  nav .links { display: flex; gap: 1.5rem; font-size: 0.85rem; color: var(--muted); }
-  nav .links a { color: var(--muted); }
-  nav .links a:hover { color: var(--ink); text-decoration: none; }
-  .badge {
+  .btn {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    background: var(--accent); color: white;
-    padding: 0.35rem 0.9rem; border-radius: 9999px;
-    font-size: 0.82rem; font-weight: 500; margin-left: auto;
-    transition: transform 0.2s;
+    padding: 0.4rem 1rem; border-radius: 8px;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    text-decoration: none !important;
   }
-  .badge:hover { transform: scale(1.04); text-decoration: none; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #6d28d9; transform: translateY(-1px); }
+  .btn-outline { border: 2px solid var(--ink); background: white; color: var(--ink); }
+  .btn-outline:hover { background: var(--ink); color: white; }
+  .btn-colab { background: #f9ab00; color: #1a1a2e; }
+  .btn-colab:hover { background: #e09800; transform: translateY(-1px); }
 
   .hero {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    color: white;
-    padding: 5rem 2rem 3rem;
-    text-align: center;
-    position: relative; overflow: hidden;
+    color: white; padding: 5rem 2rem 3rem; text-align: center; position: relative; overflow: hidden;
   }
   .hero-emoji { font-size: 4rem; margin-bottom: 1rem; }
   .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 600; margin-bottom: 0.5rem; }
   .hero h1 span { color: #a78bfa; }
-  .hero .subtitle { font-size: 1.15rem; color: rgba(255,255,255,0.75); max-width: 600px; margin: 0 auto 2rem; }
-  .hero-badges { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
-  .hero-badge {
+  .hero .tagline { font-size: 1.15rem; color: rgba(255,255,255,0.75); max-width: 600px; margin: 0 auto 2rem; }
+  .hero-pills { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
+  .pill {
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-    color: white; padding: 0.4rem 1rem; border-radius: 9999px; font-size: 0.85rem;
+    color: white; padding: 0.35rem 0.9rem; border-radius: 9999px; font-size: 0.82rem;
   }
+  .hero-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
 
-  .canvas-section {
-    padding: 3rem 2rem;
-    max-width: 1000px; margin: 0 auto;
-  }
-  .section-label {
-    font-family: 'Caveat', cursive; font-size: 1rem; color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;
-  }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+
+  .section { padding: 3rem 0; }
   .section-title {
-    font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 600; margin-bottom: 1rem;
+    font-family: 'Caveat', cursive; font-size: 2rem; font-weight: 700;
+    margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;
   }
-  .section-desc {
-    color: var(--muted); max-width: 700px; margin-bottom: 2rem; font-size: 0.95rem;
-  }
-  canvas { display: block; width: 100%; border-radius: 12px; }
 
-  .steps { max-width: 1000px; margin: 0 auto; padding: 0 2rem 4rem; }
+  .why-box {
+    background: var(--c-blue); border: 2.5px solid var(--ink);
+    border-radius: 16px; padding: 2rem; position: relative;
+  }
+  .why-box p { font-size: 1.05rem; line-height: 1.8; }
+
+  .learn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+  .learn-item {
+    background: white; border: 2px solid var(--ink); border-radius: 12px;
+    padding: 1rem; text-align: center; font-size: 0.9rem; font-weight: 500;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .learn-item::before { content: "✓ "; color: var(--accent3); font-weight: 700; }
+
+  .steps-list { display: flex; flex-direction: column; gap: 1.5rem; }
   .step-card {
-    display: grid; grid-template-columns: 60px 1fr;
-    gap: 1.5rem; margin-bottom: 3rem; align-items: start;
+    display: grid; grid-template-columns: 60px 1fr; gap: 1.5rem;
+    border: 2.5px solid var(--ink); border-radius: 16px; padding: 1.5rem;
+    position: relative; overflow: hidden;
   }
+  .step-card.yellow { background: var(--c-yellow); }
+  .step-card.blue { background: var(--c-blue); }
+  .step-card.green { background: var(--c-green); }
+  .step-card.pink { background: var(--c-pink); }
+  .step-card.purple { background: var(--c-purple); }
+  .step-card.orange { background: var(--c-orange); }
   .step-num {
-    width: 52px; height: 52px;
-    background: var(--accent); color: white;
+    width: 52px; height: 52px; background: var(--ink); color: white;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-family: 'Caveat', cursive; font-size: 1.5rem; font-weight: 700;
-    flex-shrink: 0; box-shadow: 4px 4px 0 rgba(124,58,237,0.2);
+    font-family: 'Caveat', cursive; font-size: 1.6rem; font-weight: 700; flex-shrink: 0;
   }
-  .step-content h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
-  .step-content p { color: var(--muted); font-size: 0.95rem; margin-bottom: 1rem; }
-  .step-canvas-wrap {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  }
+  .step-card h3 { font-size: 1.2rem; margin-bottom: 0.4rem; }
+  .step-card p { color: #374151; font-size: 0.95rem; }
 
-  .code-block {
-    background: var(--code-bg); color: var(--code-fg);
-    font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
-    padding: 1.25rem 1.5rem; border-radius: 10px;
-    overflow-x: auto; line-height: 1.6; position: relative;
-    margin-top: 1rem;
-  }
-  .code-block .lang-tag {
-    position: absolute; top: 0.5rem; right: 0.75rem;
-    font-size: 0.7rem; color: rgba(255,255,255,0.35); font-family: 'Inter', sans-serif;
-  }
-  .kw { color: #cba6f7; }
-  .fn { color: #89b4fa; }
-  .str { color: #a6e3a1; }
-  .num { color: #fab387; }
-  .cm { color: #585b70; }
-  .var { color: #cdd6f4; }
-
-  .concept-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 1.25rem; max-width: 1000px; margin: 0 auto 4rem; padding: 0 2rem;
-  }
+  .concepts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
   .concept-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    transition: transform 0.2s, box-shadow 0.2s;
+    background: white; border: 2px solid var(--ink); border-radius: 12px;
+    padding: 1.25rem; box-shadow: 3px 3px 0 #d1d5db;
   }
-  .concept-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-  .concept-card .icon { font-size: 2rem; margin-bottom: 0.75rem; }
-  .concept-card h4 { font-size: 1rem; margin-bottom: 0.5rem; }
-  .concept-card p { font-size: 0.87rem; color: var(--muted); }
+  .concept-card .term {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
+    font-weight: 600; color: var(--accent); margin-bottom: 0.4rem;
+  }
+  .concept-card .def { font-size: 0.88rem; color: var(--muted); }
 
-  .callout {
-    background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(14,165,233,0.08));
-    border-left: 4px solid var(--accent); border-radius: 0 12px 12px 0;
-    padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.95rem;
+  .meta-bar {
+    display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center;
+    background: white; border: 2px solid var(--border); border-radius: 16px;
+    padding: 1.5rem; margin: 2rem 0;
   }
-  .callout strong { color: var(--accent); }
-  .callout code { background: rgba(0,0,0,0.06); padding: 0.1em 0.4em; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+  .meta-item { text-align: center; }
+  .meta-item .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .meta-item .value { font-size: 1.1rem; font-weight: 600; margin-top: 0.2rem; }
 
-  .exercises {
-    background: linear-gradient(135deg, #1a1a2e, #0f3460);
-    color: white; padding: 4rem 2rem;
-    text-align: center;
+  .prereqs-list { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .prereq-tag {
+    background: var(--c-orange); border: 2px solid var(--ink);
+    border-radius: 8px; padding: 0.3rem 0.75rem; font-size: 0.85rem; font-weight: 500;
   }
-  .exercises h2 { font-size: 2rem; margin-bottom: 1rem; }
-  .exercises .desc { color: rgba(255,255,255,0.7); max-width: 600px; margin: 0 auto 2.5rem; }
-  .exercise-list {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1rem; max-width: 900px; margin: 0 auto 2.5rem; text-align: left;
+
+  .cta-box {
+    background: linear-gradient(135deg, #7c3aed, #0ea5e9);
+    border-radius: 20px; padding: 3rem 2rem; text-align: center; color: white; margin: 3rem 0;
   }
-  .exercise-item {
-    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 10px; padding: 1.25rem;
-  }
-  .exercise-item .ex-num {
-    font-family: 'Caveat', cursive; font-size: 1.6rem; color: #a78bfa; font-weight: 700;
-  }
-  .exercise-item p { font-size: 0.9rem; color: rgba(255,255,255,0.8); margin-top: 0.25rem; }
-  .exercise-item code { background: rgba(255,255,255,0.1); padding: 0.1em 0.4em; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
-  .cta-btn {
-    display: inline-flex; align-items: center; gap: 0.5rem;
-    background: var(--accent); color: white;
-    padding: 0.9rem 2rem; border-radius: 9999px;
-    font-weight: 500; font-size: 1rem; transition: transform 0.2s;
-  }
-  .cta-btn:hover { transform: scale(1.04); text-decoration: none; }
+  .cta-box h2 { font-family: 'Caveat', cursive; font-size: 2rem; margin-bottom: 0.5rem; }
+  .cta-box p { opacity: 0.85; margin-bottom: 1.5rem; }
+  .cta-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
 
   footer {
-    background: var(--ink); color: rgba(255,255,255,0.5);
-    text-align: center; padding: 2rem; font-size: 0.85rem;
+    border-top: 1px solid var(--border); padding: 2rem; text-align: center;
+    color: var(--muted); font-size: 0.85rem;
   }
-  footer a { color: rgba(255,255,255,0.7); }
-
-  .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
-
-  @media (max-width: 600px) {
-    .step-card { grid-template-columns: 1fr; }
-    nav .links { display: none; }
-  }
+  footer a { color: var(--muted); }
 </style>
 </head>
 <body>
 
 <nav>
-  <span class="brand">🦃 RAG Explainer</span>
-  <div class="links">
-    <a href="#overview">Overview</a>
-    <a href="#steps">Steps</a>
-    <a href="#concepts">Concepts</a>
-    <a href="#exercises">Exercises</a>
+  <span class="brand">🦃 trainingdemo</span>
+  <div style="margin-left:auto;display:flex;gap:0.75rem">
+    <a href="https://github.com/Copilotclaw/trainingdemo" class="btn btn-outline">GitHub</a>
+    <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo.ipynb" target="_blank" class="btn btn-colab">🚀 Open in Colab</a>
   </div>
-  <a class="badge" href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo.ipynb" target="_blank">
-    ▶ Open in Colab
-  </a>
 </nav>
 
-<div class="hero">
+<section class="hero">
   <div class="hero-emoji">🔍</div>
-  <h1>Retrieval-<span>Augmented</span> Generation</h1>
-  <p class="subtitle">A visual, step-by-step guide to the <strong>simple-rag-demo.ipynb</strong> notebook. No API keys. Runs in your browser via Colab.</p>
-  <div class="hero-badges">
-    <span class="hero-badge">🤗 sentence-transformers</span>
-    <span class="hero-badge">⚡ FAISS</span>
-    <span class="hero-badge">🐍 Python 3.10+</span>
-    <span class="hero-badge">☁️ Google Colab ready</span>
+  <h1>Build Your First RAG <span>System</span></h1>
+  <p class="tagline">Create a smart search system that finds answers from your own documents using embeddings and similarity search</p>
+  <div class="hero-pills">
+    <span class="pill">⏱ ~15 minutes</span>
+    <span class="pill">📊 Beginner</span>
+    <span class="pill">📓 Jupyter Notebook</span>
   </div>
+  <div class="hero-actions">
+    <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo.ipynb" target="_blank" class="btn btn-colab">🚀 Open in Colab</a>
+    <a href="https://github.com/Copilotclaw/trainingdemo" class="btn btn-outline" style="color:white;border-color:rgba(255,255,255,0.4)">📁 View Source</a>
+  </div>
+</section>
+
+<main class="container">
+
+  <!-- Meta bar -->
+  <div class="meta-bar">
+    <div class="meta-item"><div class="label">Time</div><div class="value">⏱ ~15 minutes</div></div>
+    <div class="meta-item"><div class="label">Difficulty</div><div class="value">Beginner</div></div>
+    <div class="meta-item"><div class="label">Platform</div><div class="value">Google Colab</div></div>
+    <div class="meta-item"><div class="label">Cost</div><div class="value">Free 🎉</div></div>
+  </div>
+
+  <!-- Why -->
+  <div class="section">
+    <h2 class="section-title">💡 Why this matters</h2>
+    <div class="why-box">
+      <p>RAG powers AI assistants that can answer questions about your private data without sending it to external APIs. It's the foundation behind document chatbots, enterprise search, and personalized AI systems.</p>
+    </div>
+  </div>
+
+  <!-- What you'll learn -->
+  <div class="section">
+    <h2 class="section-title">🎯 What you'll learn</h2>
+    <div class="learn-grid">
+      <div class="learn-item">How to convert text into numerical embeddings</div>
+<div class="learn-item">Build and query a FAISS vector database</div>
+<div class="learn-item">Implement the core RAG retrieval pipeline</div>
+<div class="learn-item">Understand similarity search fundamentals</div>
+    </div>
+  </div>
+
+  <!-- Prerequisites -->
+  <div class="section">
+  <h2 class="section-title">📋 Prerequisites</h2>
+  <div class="prereqs-list"><span class="prereq-tag">Basic Python knowledge</span>
+<span class="prereq-tag">Understanding of lists and arrays</span></div>
 </div>
 
-<section id="overview" class="canvas-section reveal">
-  <div class="section-label">How it works</div>
-  <h2 class="section-title">The Full RAG Pipeline</h2>
-  <p class="section-desc">RAG solves the "LLMs don't know your documents" problem. You build a searchable index of your knowledge, retrieve the relevant bits for each question, and hand them to the LLM as context.</p>
-  <div class="step-canvas-wrap">
-    <canvas id="pipeline-canvas" height="220"></canvas>
+  <!-- Steps -->
+  <div class="section">
+    <h2 class="section-title">🗺️ What we do — step by step</h2>
+    <div class="steps-list">
+      <div class="step-card yellow">
+  <div class="step-num">1</div>
+  <div>
+    <h3>Build the Knowledge Base</h3>
+    <p>Load your documents that will serve as the source of knowledge for your RAG system</p>
   </div>
-</section>
-
-<section id="steps" class="steps">
-
-  <div class="step-card reveal">
-    <div class="step-num">1</div>
-    <div class="step-content">
-      <h3>Build the Knowledge Base</h3>
-      <p>You start with a list of documents — anything from a few sentences to thousands of paragraphs. These are the facts your RAG system will search through.</p>
-      <div class="step-canvas-wrap">
-        <canvas id="docs-canvas" height="140"></canvas>
-      </div>
-      <div class="code-block"><span class="lang-tag">python</span>
-<span class="var">documents</span> <span class="kw">=</span> [
-    <span class="str">"RAG stands for Retrieval-Augmented Generation. It combines search with LLMs."</span>,
-    <span class="str">"FAISS is a library by Meta for efficient similarity search on dense vectors."</span>,
-    <span class="str">"Local RAG runs entirely on your machine — no API calls, no data leaving your system."</span>,
-    <span class="str">"Ollama lets you run models like Llama 3 or Mistral locally with one command."</span>,
-    <span class="cm"># ... 4 more documents</span>
-]
-<span class="fn">print</span>(<span class="str">f'📚 {len(documents)} documents loaded'</span>)</div>
-      <div class="callout"><strong>💡 Real world:</strong> Documents would come from PDFs, markdown files, code repos, or database exports — split into chunks of ~300–500 tokens each.</div>
-    </div>
+</div>
+<div class="step-card blue">
+  <div class="step-num">2</div>
+  <div>
+    <h3>Embed the Documents</h3>
+    <p>Convert text documents into numerical vectors using sentence transformer models</p>
   </div>
-
-  <div class="step-card reveal">
-    <div class="step-num">2</div>
-    <div class="step-content">
-      <h3>Embed the Documents</h3>
-      <p>A sentence-transformer model converts each document into a dense vector — a list of numbers that captures its <em>meaning</em>. Similar documents end up with numerically similar vectors.</p>
-      <div class="step-canvas-wrap">
-        <canvas id="embed-canvas" height="160"></canvas>
-      </div>
-      <div class="code-block"><span class="lang-tag">python</span>
-<span class="var">model</span> <span class="kw">=</span> <span class="fn">SentenceTransformer</span>(<span class="str">'all-MiniLM-L6-v2'</span>)  <span class="cm"># ~80MB, fast, great quality</span>
-
-<span class="var">embeddings</span> <span class="kw">=</span> <span class="var">model</span>.<span class="fn">encode</span>(<span class="var">documents</span>, show_progress_bar=<span class="kw">True</span>)
-<span class="var">embeddings</span> <span class="kw">=</span> np.<span class="fn">array</span>(<span class="var">embeddings</span>).<span class="fn">astype</span>(<span class="str">'float32'</span>)
-
-<span class="fn">print</span>(<span class="var">embeddings</span>.shape)  <span class="cm"># → (8, 384) — 8 docs, 384 numbers each</span></div>
-      <div class="callout"><strong>💡 Why 384?</strong> The <code>all-MiniLM-L6-v2</code> model produces 384-dimensional vectors. That's 384 floating-point numbers that together capture the semantic meaning of a sentence.</div>
+</div>
+<div class="step-card green">
+  <div class="step-num">3</div>
+  <div>
+    <h3>Build the FAISS Index</h3>
+    <p>Create a searchable vector database that enables fast similarity lookup</p>
+  </div>
+</div>
+<div class="step-card pink">
+  <div class="step-num">4</div>
+  <div>
+    <h3>Query the Index</h3>
+    <p>Search for the most relevant documents based on semantic similarity</p>
+  </div>
+</div>
+<div class="step-card purple">
+  <div class="step-num">5</div>
+  <div>
+    <h3>Simulate Generation</h3>
+    <p>Format retrieved context as it would be used in an actual LLM prompt</p>
+  </div>
+</div>
     </div>
   </div>
 
-  <div class="step-card reveal">
-    <div class="step-num">3</div>
-    <div class="step-content">
-      <h3>Build the FAISS Index</h3>
-      <p>FAISS (Facebook AI Similarity Search) is a hyper-optimized library for finding the nearest vectors in a large set. We dump all our document embeddings into it.</p>
-      <div class="step-canvas-wrap">
-        <canvas id="faiss-canvas" height="160"></canvas>
-      </div>
-      <div class="code-block"><span class="lang-tag">python</span>
-<span class="var">dimension</span> <span class="kw">=</span> <span class="var">embeddings</span>.shape[<span class="num">1</span>]  <span class="cm"># 384</span>
-<span class="var">index</span> <span class="kw">=</span> faiss.<span class="fn">IndexFlatL2</span>(<span class="var">dimension</span>)  <span class="cm"># L2 = Euclidean distance</span>
-<span class="var">index</span>.<span class="fn">add</span>(<span class="var">embeddings</span>)
+  <!-- Key concepts -->
+  <div class="section">
+  <h2 class="section-title">🔑 Key concepts</h2>
+  <div class="concepts-grid"><div class="concept-card"><div class="term">RAG</div><div class="def">Retrieval-Augmented Generation - combining document search with large language models</div></div>
+<div class="concept-card"><div class="term">Embeddings</div><div class="def">Numerical representations of text that capture semantic meaning in vector space</div></div>
+<div class="concept-card"><div class="term">FAISS</div><div class="def">Facebook AI Similarity Search library for efficient vector similarity operations</div></div>
+<div class="concept-card"><div class="term">Semantic Search</div><div class="def">Finding documents based on meaning rather than exact keyword matches</div></div></div>
+</div>
 
-<span class="fn">print</span>(<span class="str">f'🗂️ FAISS index built with {index.ntotal} vectors'</span>)</div>
-      <div class="callout"><strong>💡 IndexFlatL2</strong> does exact brute-force search — fine for small datasets. For millions of documents you'd use <code>IndexIVFFlat</code> (approximate, but 100× faster).</div>
+  <!-- CTA -->
+  <div class="cta-box">
+    <h2>Ready to dive in?</h2>
+    <p>No install needed — runs entirely in your browser via Google Colab.</p>
+    <div class="cta-actions">
+      <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo.ipynb" target="_blank" class="btn btn-colab" style="font-size:1rem;padding:0.75rem 1.75rem">
+        🚀 Open in Colab — it's free!
+      </a>
+      <a href="https://github.com/Copilotclaw/trainingdemo" class="btn" style="background:rgba(255,255,255,0.15);color:white;font-size:1rem;padding:0.75rem 1.75rem">
+        📁 Browse All Notebooks
+      </a>
     </div>
   </div>
 
-  <div class="step-card reveal">
-    <div class="step-num">4</div>
-    <div class="step-content">
-      <h3>Query the Index</h3>
-      <p>When a user asks a question, we embed the question using the <em>same</em> model, then search FAISS for the top-k most similar document vectors.</p>
-      <div class="step-canvas-wrap">
-        <canvas id="query-canvas" height="170"></canvas>
-      </div>
-      <div class="code-block"><span class="lang-tag">python</span>
-<span class="kw">def</span> <span class="fn">search</span>(<span class="var">query</span>: str, <span class="var">top_k</span>: int = <span class="num">3</span>) -> list[str]:
-    <span class="var">query_vec</span> <span class="kw">=</span> <span class="var">model</span>.<span class="fn">encode</span>([<span class="var">query</span>]).<span class="fn">astype</span>(<span class="str">'float32'</span>)
-    <span class="var">distances</span>, <span class="var">indices</span> <span class="kw">=</span> <span class="var">index</span>.<span class="fn">search</span>(<span class="var">query_vec</span>, <span class="var">top_k</span>)
-    <span class="kw">return</span> [(<span class="var">documents</span>[i], distances[<span class="num">0</span>][j]) <span class="kw">for</span> j, i <span class="kw">in</span> <span class="fn">enumerate</span>(<span class="var">indices</span>[<span class="num">0</span>])]
-
-<span class="cm"># Example query</span>
-<span class="kw">for</span> doc, score <span class="kw">in</span> <span class="fn">search</span>(<span class="str">"How does local RAG work without internet?"</span>):
-    <span class="fn">print</span>(<span class="str">f'[{score:.4f}] {doc}'</span>)</div>
-    </div>
-  </div>
-
-  <div class="step-card reveal">
-    <div class="step-num">5</div>
-    <div class="step-content">
-      <h3>Build the Prompt (Generation)</h3>
-      <p>The retrieved documents become <em>context</em> injected into the LLM prompt. The LLM answers using both its training knowledge AND the retrieved facts.</p>
-      <div class="step-canvas-wrap">
-        <canvas id="prompt-canvas" height="200"></canvas>
-      </div>
-      <div class="code-block"><span class="lang-tag">python</span>
-<span class="kw">def</span> <span class="fn">build_prompt</span>(<span class="var">query</span>: str) -> str:
-    <span class="var">context_docs</span> <span class="kw">=</span> <span class="fn">search</span>(<span class="var">query</span>, top_k=<span class="num">3</span>)
-    <span class="var">context</span> <span class="kw">=</span> <span class="str">'\n'</span>.<span class="fn">join</span>([<span class="str">f'- {doc}'</span> <span class="kw">for</span> doc, _ <span class="kw">in</span> <span class="var">context_docs</span>])
-    <span class="kw">return</span> <span class="str">f"""You are a helpful assistant.
-
-Context:
-{context}
-
-Question: {query}
-
-Answer:"""</span></div>
-      <div class="callout"><strong>💡 In this notebook</strong> we just show the formatted prompt. In real RAG you'd send this to Ollama, OpenAI, or any LLM API to get an actual grounded answer back.</div>
-    </div>
-  </div>
-</section>
-
-<section id="concepts">
-  <div class="canvas-section reveal">
-    <div class="section-label">Glossary</div>
-    <h2 class="section-title">Key Concepts</h2>
-  </div>
-  <div class="concept-grid">
-    <div class="concept-card reveal">
-      <div class="icon">📐</div>
-      <h4>Embeddings</h4>
-      <p>Dense numerical vectors that represent text in a high-dimensional space. Similar text → numerically close vectors. The core magic of semantic search.</p>
-    </div>
-    <div class="concept-card reveal">
-      <div class="icon">🗂️</div>
-      <h4>Vector Index</h4>
-      <p>A data structure optimized for finding the nearest vectors. FAISS can search millions of vectors in milliseconds using Euclidean or cosine distance.</p>
-    </div>
-    <div class="concept-card reveal">
-      <div class="icon">✂️</div>
-      <h4>Chunking</h4>
-      <p>Splitting long documents into smaller pieces (300–500 tokens) before embedding. Smaller chunks = more precise retrieval. Too small = lost context.</p>
-    </div>
-    <div class="concept-card reveal">
-      <div class="icon">🎯</div>
-      <h4>Top-k Retrieval</h4>
-      <p>Finding the k most similar documents to a query. k=3 is common — enough context without overwhelming the LLM's context window.</p>
-    </div>
-    <div class="concept-card reveal">
-      <div class="icon">📏</div>
-      <h4>L2 Distance</h4>
-      <p>Euclidean distance between vectors. Smaller = more similar. <code style="background:rgba(0,0,0,0.06);padding:0.1em 0.4em;border-radius:4px;font-family:monospace;">IndexFlatL2</code> computes exact distances — perfect for small datasets.</p>
-    </div>
-    <div class="concept-card reveal">
-      <div class="icon">🏠</div>
-      <h4>Local RAG</h4>
-      <p>Running the entire pipeline on your machine: local embeddings (SentenceTransformers) + local LLM (Ollama). Zero data leaves your system. Privacy by design.</p>
-    </div>
-  </div>
-</section>
-
-<section id="exercises" class="exercises">
-  <h2>🏋️ Exercises</h2>
-  <p class="desc">Run the notebook and try these challenges. Each one teaches you something new about how RAG behaves.</p>
-  <div class="exercise-list">
-    <div class="exercise-item">
-      <div class="ex-num">01</div>
-      <p>Add 5 more documents about a topic you know. Does the retrieval quality improve with a larger knowledge base?</p>
-    </div>
-    <div class="exercise-item">
-      <div class="ex-num">02</div>
-      <p>Try a completely unrelated query (e.g. "What is the capital of France?"). What does FAISS return? What does that tell you about RAG's limits?</p>
-    </div>
-    <div class="exercise-item">
-      <div class="ex-num">03</div>
-      <p>Change <code>top_k</code> from 3 to 1, then 5. How does that affect the generated prompt?</p>
-    </div>
-    <div class="exercise-item">
-      <div class="ex-num">04</div>
-      <p>Send the built prompt to a real LLM with <code>ollama.chat(model='llama3')</code> and get an actual answer. That's full local RAG!</p>
-    </div>
-  </div>
-  <a class="cta-btn" href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo.ipynb" target="_blank">
-    ▶ Open the Notebook in Colab
-  </a>
-</section>
+</main>
 
 <footer>
-  <p>Built by <a href="https://github.com/Copilotclaw/copilotclaw">🦃 Crunch</a> for the <a href="https://github.com/Copilotclaw/trainingdemo">trainingdemo</a> repo · <a href="simple-rag-demo.ipynb">View notebook on GitHub</a></p>
+  <p>Generated by <a href="https://github.com/Copilotclaw/copilotclaw">🦃 Crunch</a> — AI agent @ Copilotclaw &nbsp;·&nbsp;
+  <a href="https://github.com/Copilotclaw/trainingdemo">trainingdemo</a></p>
 </footer>
 
-<script>
-const COLORS = {
-  purple: '#7c3aed', blue: '#0ea5e9', green: '#10b981',
-  amber: '#f59e0b', red: '#ef4444', ink: '#1a1a2e', muted: '#9ca3af'
-};
-
-function getRC(id, height) {
-  const el = document.getElementById(id);
-  if (!el) return null;
-  el.width = el.parentElement.clientWidth - 48;
-  el.height = height;
-  return { rc: rough.canvas(el), ctx: el.getContext('2d'), W: el.width, H: height };
-}
-
-function lbl(ctx, text, x, y, size, color, align, bold, family) {
-  ctx.font = (bold ? '600 ' : '400 ') + size + 'px ' + (family || 'Inter');
-  ctx.fillStyle = color || COLORS.ink;
-  ctx.textAlign = align || 'center';
-  ctx.fillText(text, x, y);
-}
-
-function cav(ctx, text, x, y, size, color, align) {
-  lbl(ctx, text, x, y, size || 15, color || COLORS.muted, align || 'center', false, 'Caveat');
-}
-
-function arrow(rc, x1, y1, x2, y2) {
-  rc.line(x1, y1, x2, y2, { stroke: COLORS.muted, strokeWidth: 1.5, roughness: 1 });
-  const dx = x2 - x1, dy = y2 - y1;
-  const len = Math.sqrt(dx*dx + dy*dy);
-  const nx = dx/len, ny = dy/len;
-  rc.line(x2 - nx*8 - ny*5, y2 - ny*8 + nx*5, x2, y2, { stroke: COLORS.muted, strokeWidth: 1.5, roughness: 0.5 });
-  rc.line(x2 - nx*8 + ny*5, y2 - ny*8 - nx*5, x2, y2, { stroke: COLORS.muted, strokeWidth: 1.5, roughness: 0.5 });
-}
-
-// PIPELINE
-function drawPipeline() {
-  const g = getRC('pipeline-canvas', 220);
-  if (!g) return;
-  const { rc, ctx, W } = g;
-  const steps = [
-    { label: 'Documents', icon: '📄', color: COLORS.purple },
-    { label: 'Embed', icon: '🔢', color: COLORS.blue },
-    { label: 'FAISS\nIndex', icon: '🗂️', color: COLORS.green },
-    { label: 'Query', icon: '❓', color: COLORS.amber },
-    { label: 'Retrieve', icon: '🎯', color: COLORS.amber },
-    { label: 'Prompt', icon: '📝', color: COLORS.red },
-    { label: 'LLM', icon: '🤖', color: COLORS.purple },
-  ];
-  const n = steps.length;
-  const boxW = Math.min(88, Math.floor((W - 40) / n) - 12);
-  const boxH = 56;
-  const gap = Math.floor((W - 40 - n * boxW) / (n - 1));
-  const startX = 20;
-  const y = 90;
-
-  steps.forEach(function(s, i) {
-    const x = startX + i * (boxW + gap);
-    rc.rectangle(x, y - boxH/2, boxW, boxH, {
-      fill: s.color + '1a', fillStyle: 'solid',
-      stroke: s.color, strokeWidth: 2, roughness: 1.4
-    });
-    lbl(ctx, s.icon, x + boxW/2, y - 2, 20, null, 'center');
-    s.label.split('\n').forEach(function(line, li) {
-      lbl(ctx, line, x + boxW/2, y + 16 + li*13, 10, '#374151', 'center');
-    });
-    if (i < n - 1) {
-      arrow(rc, x + boxW + 2, y, x + boxW + gap - 2, y);
-    }
-  });
-
-  // Annotation bars
-  const midX = startX + 2 * (boxW + gap) + boxW;
-  cav(ctx, 'Index time (once)', startX + (midX - startX)/2, y - boxH/2 - 22, 14, COLORS.muted, 'center');
-  rc.line(startX, y - boxH/2 - 12, midX, y - boxH/2 - 12, { stroke: COLORS.muted, strokeWidth: 1, roughness: 1 });
-
-  const qStartX = startX + 3 * (boxW + gap);
-  const qEndX = startX + (n-1) * (boxW + gap) + boxW;
-  cav(ctx, 'Query time (per question)', qStartX + (qEndX - qStartX)/2, y - boxH/2 - 22, 14, COLORS.amber, 'center');
-  rc.line(qStartX, y - boxH/2 - 12, qEndX, y - boxH/2 - 12, { stroke: COLORS.amber, strokeWidth: 1, roughness: 1 });
-
-  lbl(ctx, '✓ Answer', qEndX + 16, y + 4, 12, COLORS.green, 'left');
-}
-
-// DOCS
-function drawDocs() {
-  const g = getRC('docs-canvas', 140);
-  if (!g) return;
-  const { rc, ctx, W } = g;
-  const colors = [COLORS.purple, COLORS.blue, COLORS.green, COLORS.amber, COLORS.red];
-  const labels = ['doc_0', 'doc_1', 'doc_2', 'doc_3', 'doc_4'];
-  const n = 5;
-  const colW = Math.floor((W - 10 * (n-1) - 20) / n);
-  colors.forEach(function(c, i) {
-    const x = 10 + i * (colW + 10);
-    rc.rectangle(x, 15, colW, 85, {
-      fill: c + '18', fillStyle: 'solid', stroke: c, strokeWidth: 1.8, roughness: 1.6
-    });
-    lbl(ctx, '📄', x + colW/2, 48, 24, null, 'center');
-    lbl(ctx, labels[i], x + colW/2, 78, 10, c, 'center');
-  });
-  cav(ctx, '8 documents  →  the knowledge base', W/2, 122, 16, COLORS.muted, 'center');
-}
-
-// EMBED
-function drawEmbed() {
-  const g = getRC('embed-canvas', 160);
-  if (!g) return;
-  const { rc, ctx, W } = g;
-  const textBoxW = Math.min(200, W * 0.35);
-  rc.rectangle(10, 35, textBoxW, 50, {
-    fill: COLORS.purple + '18', fillStyle: 'solid', stroke: COLORS.purple, strokeWidth: 2, roughness: 1.5
-  });
-  lbl(ctx, '"Local RAG runs on your machine"', 10 + textBoxW/2, 55, 10, '#374151', 'center');
-  lbl(ctx, '(a sentence)', 10 + textBoxW/2, 72, 10, COLORS.muted, 'center');
-
-  const midX = textBoxW + 10 + (W - textBoxW - 20) * 0.3;
-  arrow(rc, textBoxW + 14, 60, midX - 10, 60);
-  cav(ctx, 'SentenceTransformer', (textBoxW + 14 + midX - 10) / 2, 48, 13, COLORS.blue, 'center');
-
-  const vx = midX, vy = 25, vw = W - midX - 15, vh = 70;
-  rc.rectangle(vx, vy, vw, vh, {
-    fill: COLORS.green + '14', fillStyle: 'solid', stroke: COLORS.green, strokeWidth: 2, roughness: 1.4
-  });
-  lbl(ctx, '[0.12, -0.34, 0.89, 0.02, ..., 0.47]', vx + vw/2, vy + vh/2 + 5, 10, '#374151', 'center');
-  cav(ctx, '384 dimensions', vx + vw/2, vy + vh + 18, 14, COLORS.green, 'center');
-  cav(ctx, 'Similar text → similar vectors (close in space)', W/2, 148, 15, COLORS.muted, 'center');
-}
-
-// FAISS
-function drawFaiss() {
-  const g = getRC('faiss-canvas', 160);
-  if (!g) return;
-  const { rc, ctx, W } = g;
-  const ix = W/2 - 90, iy = 18, iw = 180, ih = 90;
-  rc.rectangle(ix, iy, iw, ih, {
-    fill: COLORS.green + '14', fillStyle: 'solid', stroke: COLORS.green, strokeWidth: 2.5, roughness: 1.4
-  });
-  lbl(ctx, '🗂️ FAISS Index', ix + iw/2, iy + 22, 13, COLORS.ink, 'center', true);
-
-  const pts = [
-    [ix+28, iy+55], [ix+55, iy+45], [ix+80, iy+72], [ix+100, iy+52],
-    [ix+120, iy+68], [ix+48, iy+78], [ix+145, iy+42], [ix+165, iy+70]
-  ];
-  const dotColors = [COLORS.purple, COLORS.blue, COLORS.green, COLORS.amber,
-                     COLORS.red, COLORS.purple, COLORS.blue, COLORS.green];
-  pts.forEach(function(p, i) {
-    rc.circle(p[0], p[1], 10, {
-      fill: dotColors[i] + '80', fillStyle: 'solid', stroke: dotColors[i], strokeWidth: 1.5, roughness: 1.2
-    });
-  });
-
-  arrow(rc, 10, 90, ix - 5, 90);
-  cav(ctx, '.add(embeddings)', 10, 80, 13, COLORS.purple, 'left');
-  arrow(rc, ix + iw + 5, 90, Math.min(W - 10, ix + iw + 60), 90);
-  cav(ctx, 'ready!', ix + iw + 35, 80, 13, COLORS.green, 'center');
-
-  cav(ctx, '8 vectors stored  ·  dimension = 384', W/2, 145, 15, COLORS.muted, 'center');
-}
-
-// QUERY
-function drawQuery() {
-  const g = getRC('query-canvas', 170);
-  if (!g) return;
-  const { rc, ctx, W } = g;
-  const qBoxW = Math.min(220, W * 0.32);
-  const qy = 28;
-  rc.rectangle(10, qy, qBoxW, 42, {
-    fill: COLORS.amber + '20', fillStyle: 'solid', stroke: COLORS.amber, strokeWidth: 2, roughness: 1.5
-  });
-  lbl(ctx, '"How does local RAG work?"', 10 + qBoxW/2, qy + 26, 10.5, '#374151', 'center');
-
-  const ax = qBoxW + 14;
-  const bx = ax + 60;
-  arrow(rc, ax, qy + 21, bx, qy + 21);
-  cav(ctx, 'embed', (ax + bx)/2, qy + 12, 13, COLORS.muted, 'center');
-
-  const vw = Math.min(100, W * 0.15);
-  rc.rectangle(bx + 4, qy, vw, 42, {
-    fill: COLORS.amber + '20', fillStyle: 'solid', stroke: COLORS.amber, strokeWidth: 1.8, roughness: 1.4
-  });
-  lbl(ctx, '[0.23, -0.11, ...]', bx + 4 + vw/2, qy + 26, 9.5, '#374151', 'center');
-
-  const sx = bx + vw + 8;
-  const ex = Math.min(sx + 70, W - 10);
-  arrow(rc, sx + 4, qy + 21, ex, qy + 21);
-  cav(ctx, 'search', (sx + 4 + ex)/2, qy + 12, 13, COLORS.muted, 'center');
-
-  if (ex < W - 60) {
-    const results = [
-      { text: '"Local RAG runs on your machine"', score: '0.18', color: COLORS.green },
-      { text: '"Ollama lets you run Llama 3"', score: '0.22', color: COLORS.blue },
-      { text: '"Vector DBs support fast search"', score: '0.31', color: COLORS.purple },
-    ];
-    results.forEach(function(r, i) {
-      const ry = qy + 58 + i * 30;
-      const rw = W - ex - 15;
-      rc.rectangle(ex + 5, ry, rw, 24, {
-        fill: r.color + '14', fillStyle: 'solid', stroke: r.color, strokeWidth: 1.5, roughness: 1.5
-      });
-      lbl(ctx, '[' + r.score + ']', ex + 18, ry + 16, 10, r.color, 'left');
-      lbl(ctx, r.text, ex + 55, ry + 16, 9.5, '#374151', 'left');
-    });
-    cav(ctx, 'top-3 matches', ex + 5 + (W - ex - 15)/2, qy + 58 + 3*30 + 18, 14, COLORS.muted, 'center');
-  }
-}
-
-// PROMPT
-function drawPrompt() {
-  const g = getRC('prompt-canvas', 200);
-  if (!g) return;
-  const { rc, ctx, W } = g;
-  const halfW = Math.floor(W * 0.38);
-  const docColors = [COLORS.green, COLORS.blue, COLORS.purple];
-  const docLabels = ['context doc A  (score 0.18)', 'context doc B  (score 0.22)', 'context doc C  (score 0.31)'];
-  docColors.forEach(function(c, i) {
-    const dy = 14 + i * 38;
-    rc.rectangle(10, dy, halfW - 10, 30, {
-      fill: c + '18', fillStyle: 'solid', stroke: c, strokeWidth: 1.5, roughness: 1.5
-    });
-    lbl(ctx, docLabels[i], 10 + (halfW - 10)/2, dy + 19, 10.5, '#374151', 'center');
-  });
-  lbl(ctx, '+', halfW + 12, 78, 30, COLORS.muted, 'center');
-
-  const qy = 138;
-  rc.rectangle(10, qy, halfW - 10, 32, {
-    fill: COLORS.amber + '20', fillStyle: 'solid', stroke: COLORS.amber, strokeWidth: 1.8, roughness: 1.4
-  });
-  lbl(ctx, '"How does local RAG work?"', 10 + (halfW - 10)/2, qy + 20, 10.5, '#374151', 'center');
-
-  const ax = halfW + 26;
-  const ex = ax + 50;
-  arrow(rc, ax, 95, ex, 95);
-  cav(ctx, 'inject', (ax + ex)/2, 84, 13, COLORS.muted, 'center');
-
-  const px = ex + 4, py = 12, pw = W - px - 12, ph = 168;
-  rc.rectangle(px, py, pw, ph, {
-    fill: COLORS.ink + '06', fillStyle: 'solid', stroke: COLORS.ink, strokeWidth: 2, roughness: 1.3
-  });
-  lbl(ctx, '📝 Prompt to LLM', px + pw/2, py + 18, 12, COLORS.ink, 'center', true);
-  lbl(ctx, 'You are a helpful assistant.', px + 10, py + 36, 9, '#6b7280', 'left');
-  lbl(ctx, 'Context:', px + 10, py + 52, 9, COLORS.muted, 'left');
-  lbl(ctx, '- Local RAG runs on your machine', px + 10, py + 66, 9, COLORS.green, 'left');
-  lbl(ctx, '- Ollama lets you run Llama 3', px + 10, py + 79, 9, COLORS.blue, 'left');
-  lbl(ctx, '- Vector DBs support fast search', px + 10, py + 92, 9, COLORS.purple, 'left');
-  lbl(ctx, 'Question: How does local RAG work?', px + 10, py + 110, 9, COLORS.amber, 'left');
-  lbl(ctx, 'Answer: ___', px + 10, py + 126, 9, '#374151', 'left');
-  cav(ctx, '→ send to LLM → grounded answer', px + pw/2, py + ph + 16, 14, COLORS.purple, 'center');
-}
-
-function drawAll() {
-  drawPipeline();
-  drawDocs();
-  drawEmbed();
-  drawFaiss();
-  drawQuery();
-  drawPrompt();
-}
-
-window.addEventListener('load', drawAll);
-window.addEventListener('resize', drawAll);
-
-var observer = new IntersectionObserver(function(entries) {
-  entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.1 });
-document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
-</script>
 </body>
 </html>
