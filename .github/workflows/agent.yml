@@ -128,14 +128,7 @@ jobs:
           git config user.email "gitclaw[bot]@users.noreply.github.com"
 
           # Prevent agent-injected temp files from being committed
-          cat >> .gitignore << 'GITIGNORE_APPEND'
-_crunch/
-AGENTS.md
-HEARTBEAT.md
-memory.log
-state/memory/
-state/copilot/
-GITIGNORE_APPEND
+          printf '_crunch/\nAGENTS.md\nHEARTBEAT.md\nmemory.log\nstate/memory/\nstate/copilot/\n' >> .gitignore
 
           # Session mapping (per-issue, stored in trainingdemo)
           MAPPING_FILE="state/sessions/${ISSUE_NUMBER}.json"
@@ -167,9 +160,7 @@ GITIGNORE_APPEND
             printf '%s' "$NEW_INPUT" > "$MSG_FILE"
             git add "$MSG_FILE"
             if ! git diff --cached --quiet "$MSG_FILE"; then
-              git commit -m "chore: overflow message for trainingdemo issue #${ISSUE_NUMBER}
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+              git commit -m "$(printf 'chore: overflow message for trainingdemo issue #%s\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>' "${ISSUE_NUMBER}")"
             fi
             MSG_REF="*(message too large for inline — read full content from \`${MSG_FILE}\`)*"
           fi
@@ -229,9 +220,7 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git add -A
           if ! git diff --cached --quiet; then
-            git commit -m "gitclaw: work on trainingdemo issue #$ISSUE_NUMBER
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+            git commit -m "$(printf 'gitclaw: work on trainingdemo issue #%s\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>' "$ISSUE_NUMBER")"
           fi
           for i in 1 2 3; do
             if git push origin main; then break; fi
@@ -288,9 +277,7 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
               printf '\n\n%s' "$NEW_ENTRY" >> "$SUMMARY_FILE"
               git add "$SUMMARY_FILE"
               if ! git diff --cached --quiet; then
-                git commit -m "chore: append interaction summary for trainingdemo issue #${ISSUE_NUMBER}
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+                git commit -m "$(printf 'chore: append interaction summary for trainingdemo issue #%s\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>' "${ISSUE_NUMBER}")"
                 for i in 1 2 3; do
                   if git push origin main; then break; fi
                   git pull --rebase --autostash origin main || { git rebase --abort 2>/dev/null || true; break; }
