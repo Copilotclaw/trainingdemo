@@ -198,10 +198,10 @@ jobs:
             echo "=== copilot CLI stderr ===" && cat /tmp/copilot-stderr.txt
           fi
 
-          # Discover session ID
+          # Discover session ID (sessions live at $HOME/.copilot/session-state/)
           if [ -z "$SESSION_ID" ]; then
-            NEWEST_PATH=$(find ./state/copilot -mindepth 3 -maxdepth 3 -type d \
-              -newer /tmp/copilot-run-start 2>/dev/null | head -1)
+            NEWEST_PATH=$(find "$HOME/.copilot/session-state" -mindepth 1 -maxdepth 1 -type d \
+              -newer /tmp/copilot-run-start 2>/dev/null | head -1) || true
             if [ -n "$NEWEST_PATH" ]; then
               SESSION_ID=$(basename "$NEWEST_PATH")
               echo "New session ID: $SESSION_ID"
@@ -246,7 +246,9 @@ jobs:
           fi
 
           if [ "$SHOULD_POST" = "true" ]; then
-            printf '%s\n\n<!-- crunch:posted -->' "$AGENT_TEXT" | head -c 60000 > /tmp/agent-response.txt
+            printf '%s\n\n<!-- crunch:posted -->' "$AGENT_TEXT" > /tmp/agent-response-raw.txt
+            head -c 60000 /tmp/agent-response-raw.txt > /tmp/agent-response.txt
+            rm -f /tmp/agent-response-raw.txt
             gh issue comment "$ISSUE_NUMBER" --body-file /tmp/agent-response.txt
           fi
 
