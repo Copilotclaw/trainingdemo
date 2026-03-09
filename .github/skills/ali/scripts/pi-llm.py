@@ -30,7 +30,7 @@ import tempfile
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PI_SETUP = os.path.join(SCRIPT_DIR, "pi-setup.sh")
 
-DEFAULT_MODEL = "qwen3-coder-plus"
+DEFAULT_MODEL = "qwen3.5-plus"
 MODEL_MAP = {
     "qwen3-coder-plus": "qwen3-coder-plus",
     "qwen3-coder-next": "qwen3-coder-next",

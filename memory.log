@@ -796,4 +796,29 @@ SHIPPED: .github/scripts/lib/ — platform.py + 4 scripts. Works on GitHub+Gitea
 [2026-03-09T14:30:00Z] HOOK:SessionEnd reason=complete
 [2026-03-09T14:31:08Z] HOOK:SessionStart source=new
 [2026-03-09T14:31:22Z] HOOK:SessionEnd reason=complete
-[2026-03-09T14:45:18Z] MODEL PREFERENCE: qwen3.5-plus — use qwen3.5-plus (Alibaba Cloud ali skill) as the default LLM for reasoning/generation/summary tasks. Requested by Marcus via issue #3.
+[2026-03-09T14:46:14Z] HOOK:SessionStart source=new
+[2026-03-09T14:46:32Z] HOOK:SessionEnd reason=complete
+[2026-03-09T14:43:23Z] HOOK:SessionStart source=new
+[2026-03-09T14:48:28Z] HOOK:ToolFailure tool=bash result=failure msg=Command blocked: contains dangerous shell expansion patterns (e.g., parameter transformation, indirect expansion, or nested command substitution) that could enable arbitrary code execution. Please rew
+[2026-03-09T14:49:20Z] HOOK:SessionEnd reason=complete
+[2026-03-09T14:46:22Z] HOOK:SessionStart source=new
+[2026-03-09T14:48:34Z] HOOK:ToolFailure tool=bash result=failure msg=Command blocked: contains dangerous shell expansion patterns (e.g., parameter transformation, indirect expansion, or nested command substitution) that could enable arbitrary code execution. Please rew
+[2026-03-09T14:49:16Z] MODEL_PREFERENCE: qwen3.5-plus is now the DEFAULT ALI model for all tasks (big context, vision, deep thinking). Changed from qwen3-coder-plus. Issue #145.
+[2026-03-09T14:50:33Z] HOOK:SessionEnd reason=complete
+[2026-03-09T15:01:41Z] HOOK:SessionStart source=new
+[2026-03-09T15:01:56Z] HOOK:SessionEnd reason=complete
+[2026-03-09T14:57:55Z] HOOK:SessionStart source=new
+[2026-03-09T15:02:56Z] HOOK:SessionEnd reason=complete
+[2026-03-09T14:59:42Z] HOOK:SessionStart source=new
+[2026-03-09T15:01:10Z] HOOK:ToolFailure tool=edit result=failure msg=Multiple matches found for old_str in /home/runner/work/copilotclaw/copilotclaw/.github/skills/ali/scripts/llm.py; no changes made; you might want to try again and be more specific with old_str
+[2026-03-09T15:09:02Z] HOOK:SessionEnd reason=complete
+[2026-03-09T15:16:10Z] HOOK:SessionStart source=new
+[2026-03-09T15:16:24Z] HOOK:SessionEnd reason=complete
+[2026-03-09T15:31:20Z] HOOK:SessionStart source=new
+[2026-03-09T15:31:36Z] HOOK:SessionEnd reason=complete
+[2026-03-09T15:46:23Z] HOOK:SessionStart source=new
+[2026-03-09T15:46:36Z] HOOK:SessionEnd reason=complete
+[2026-03-09T15:50:54Z] HOOK:SessionEnd reason=complete
+[2026-03-09T15:51:19Z] HOOK:SessionStart source=new
+[2026-03-09T15:52:22Z] HOOK:ToolFailure tool=bash result=failure msg=Command blocked: contains dangerous shell expansion patterns (e.g., parameter transformation, indirect expansion, or nested command substitution) that could enable arbitrary code execution. Please rew
+[2026-03-09T15:52:56Z] HOOK:SessionEnd reason=complete

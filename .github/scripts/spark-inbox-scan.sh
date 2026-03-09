@@ -21,7 +21,7 @@ fi
 # Pick LLM provider: Ali if ALIKEY set, else Azure
 if [[ -n "${ALIKEY:-}" ]]; then
   LLM_SCRIPT="$SCRIPT_DIR/../skills/ali/scripts/llm.py"
-  LLM_MODEL="qwen3-coder-plus"
+  LLM_MODEL="qwen3.5-plus"
 else
   LLM_SCRIPT="$SCRIPT_DIR/../skills/azure/scripts/llm.py"
   LLM_MODEL="grok-4-1-fast-non-reasoning"

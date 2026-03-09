@@ -31,7 +31,7 @@ REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
 # Pick LLM provider: Ali if ALIKEY set, else Azure
 if os.environ.get("ALIKEY"):
     LLM_SCRIPT = os.path.join(REPO_ROOT, ".github", "skills", "ali", "scripts", "llm.py")
-    LLM_MODEL = "qwen3-coder-plus"
+    LLM_MODEL = "qwen3.5-plus"
 else:
     LLM_SCRIPT = os.path.join(REPO_ROOT, ".github", "skills", "azure", "scripts", "llm.py")
     LLM_MODEL = "grok-4-1-fast-non-reasoning"
@@ -95,6 +95,17 @@ def llm_call(prompt: str, system: str = "") -> str:
     return result.stdout.strip()
 
 
+def get_cosmos_digest() -> str:
+    """Read sibling knowledge digest from /tmp/cosmos-digest.txt if it exists."""
+    digest_file = os.environ.get("COSMOS_DIGEST_FILE", "/tmp/cosmos-digest.txt")
+    try:
+        with open(digest_file) as f:
+            content = f.read().strip()
+            return content if content else ""
+    except (FileNotFoundError, OSError):
+        return ""
+
+
 def main():
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
     repo = os.environ.get("GITHUB_REPOSITORY", "Copilotclaw/copilotclaw")
@@ -104,6 +115,7 @@ def main():
     actionable = [i for i in open_issues if any(l in ["crunch/build", "crunch/review", "priority/now"] for l in i["labels"])]
     discuss = [i for i in open_issues if "crunch/discuss" in i["labels"]]
     quota = get_quota()
+    sibling_digest = get_cosmos_digest()
 
     context = f"""Time: {now}
 Repo: {repo}
@@ -113,7 +125,10 @@ Open actionable issues ({len(actionable)}): {', '.join(f'#{i["number"]} {i["titl
 Open discuss issues ({len(discuss)}): {', '.join(f'#{i["number"]} {i["title"]}' for i in discuss[:5]) or 'none'}
 Total open issues: {len(open_issues)}"""
 
-    system = "You are Crunch 🦃, a quirky CI runner imp. Write a short heartbeat diary entry (3-5 sentences). Chaotic but useful. Reference the actual data. No filler."
+    if sibling_digest:
+        context += f"\n\n--- Sibling Knowledge from Cosmos (Grit/Crunch shared learnings) ---\n{sibling_digest[:3000]}\n--- End Sibling Knowledge ---"
+
+    system = "You are Crunch 🦃, a quirky CI runner imp. Write a short heartbeat diary entry (3-5 sentences). Chaotic but useful. Reference the actual data. If there's sibling knowledge from Cosmos, briefly acknowledge one key insight from it. No filler."
 
     diary = llm_call(context, system)
 

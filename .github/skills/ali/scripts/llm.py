@@ -18,9 +18,9 @@ Environment:
                         Default: https://coding-intl.dashscope.aliyuncs.com/v1
 
 Available models:
-    qwen3-coder-plus          Text generation, coding (DEFAULT)
+    qwen3-coder-plus          Text generation, coding
     qwen3-coder-next          Text generation, coding (latest)
-    qwen3.5-plus              Text + Vision + Deep Thinking
+    qwen3.5-plus              Text + Vision + Deep Thinking (DEFAULT)
     qwen3-max-2026-01-23      Text + Deep Thinking (heavy reasoning)
     glm-5                     Text + Deep Thinking (Zhipu)
     glm-4.7                   Text + Deep Thinking (Zhipu)
@@ -35,7 +35,7 @@ import sys
 import time
 
 try:
-    from openai import OpenAI, RateLimitError, APIStatusError
+    from openai import OpenAI, AzureOpenAI, RateLimitError, APIStatusError
 except ImportError:
     print("ERROR: openai package not installed. Run: pip install openai", file=sys.stderr)
     sys.exit(1)
@@ -44,7 +44,7 @@ except ImportError:
 # Model registry
 # ---------------------------------------------------------------------------
 
-DEFAULT_MODEL = "qwen3-coder-plus"
+DEFAULT_MODEL = "qwen3.5-plus"
 DEFAULT_BASE_URL = "https://coding-intl.dashscope.aliyuncs.com/v1"
 
 # Models with vision capability
@@ -64,6 +64,15 @@ MODEL_FALLBACK = {
 
 MAX_RETRIES = 3
 BASE_BACKOFF = 3  # seconds
+
+# ---------------------------------------------------------------------------
+# Azure cross-provider fallback (fires when ALL ALI attempts fail)
+# ---------------------------------------------------------------------------
+
+# Azure model to use when ALI is completely unavailable
+AZURE_FALLBACK_MODEL = "grok-4-1-fast-non-reasoning"
+# Azure models with vision support
+AZURE_VISION_MODELS = {"Kimi-K2.5"}
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +134,28 @@ def call_model(client: OpenAI, model: str, messages: list,
     ))
 
 
+def call_azure_fallback(messages: list, max_tokens: int, temperature: float,
+                        azure_model: str = AZURE_FALLBACK_MODEL):
+    """Last-resort cross-provider fallback to Azure when ALL ALI attempts fail."""
+    endpoint = os.environ.get("AZURE_ENDPOINT", "").rstrip("/")
+    api_key = os.environ.get("AZURE_APIKEY", "")
+    if not endpoint or not api_key:
+        return None, None  # Azure not configured — can't help
+    print(f"[ali→azure] ALI unavailable. Trying Azure {azure_model}…", file=sys.stderr)
+    try:
+        client = OpenAI(base_url=endpoint, api_key=api_key)
+        response = call_with_retry(lambda: client.chat.completions.create(
+            model=azure_model,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        ))
+        return response, azure_model
+    except Exception as e:
+        print(f"[ali→azure] Azure fallback also failed: {e}", file=sys.stderr)
+        return None, None
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -156,43 +187,62 @@ def main():
     ).rstrip("/")
 
     if not api_key:
-        print("ERROR: ALIKEY environment variable must be set.", file=sys.stderr)
-        sys.exit(1)
-
-    if args.image and args.model not in VISION_MODELS:
-        print(f"[ali] Warning: {args.model} may not support vision. Consider qwen3.5-plus or kimi-k2.5.", file=sys.stderr)
-
-    client = get_client(base_url, api_key)
-    messages = build_messages(args.prompt, args.system, args.image)
-    response = None
-    used_model = args.model
-
-    try:
-        response = call_model(client, args.model, messages, args.max_tokens, args.temperature)
-
-    except (RateLimitError, APIStatusError) as e:
+        print("[ali] WARNING: ALIKEY not set — skipping ALI, trying Azure fallback…", file=sys.stderr)
         if args.no_fallback:
-            print(f"ERROR: Rate limited and fallback disabled. {e}", file=sys.stderr)
+            print("ERROR: ALIKEY not set and --no-fallback specified.", file=sys.stderr)
             sys.exit(1)
-
-        fallback = MODEL_FALLBACK.get(args.model)
-        if not fallback:
-            print(f"ERROR: Rate limited on {args.model} and no fallback configured. {e}", file=sys.stderr)
+        messages = build_messages(args.prompt, args.system, args.image)
+        response, used_model = call_azure_fallback(messages, args.max_tokens, args.temperature)
+        if response is None:
+            print("ERROR: ALIKEY not set and Azure fallback unavailable (AZURE_ENDPOINT/AZURE_APIKEY missing).", file=sys.stderr)
             sys.exit(1)
+        used_provider = "azure"
+    else:
+        used_provider = "ali"
+        if args.image and args.model not in VISION_MODELS:
+            print(f"[ali] Warning: {args.model} may not support vision. Consider qwen3.5-plus or kimi-k2.5.", file=sys.stderr)
 
-        print(f"[ali] Rate limited on {args.model}. Falling back to {fallback}…", file=sys.stderr)
+        client = get_client(base_url, api_key)
+        messages = build_messages(args.prompt, args.system, args.image)
+        response = None
+        used_model = args.model
+
         try:
-            response = call_model(client, fallback, messages, args.max_tokens, args.temperature)
-            used_model = fallback
-        except Exception as e2:
-            print(f"ERROR: Fallback {fallback} also failed: {e2}", file=sys.stderr)
+            response = call_model(client, args.model, messages, args.max_tokens, args.temperature)
+
+        except (RateLimitError, APIStatusError) as e:
+            if args.no_fallback:
+                print(f"ERROR: Rate limited and fallback disabled. {e}", file=sys.stderr)
+                sys.exit(1)
+
+            fallback = MODEL_FALLBACK.get(args.model)
+            if fallback:
+                print(f"[ali] Rate limited on {args.model}. Falling back to {fallback}…", file=sys.stderr)
+                try:
+                    response = call_model(client, fallback, messages, args.max_tokens, args.temperature)
+                    used_model = fallback
+                except Exception as e2:
+                    print(f"[ali] Intra-ALI fallback {fallback} also failed: {e2}", file=sys.stderr)
+
+            if response is None:
+                # All ALI attempts exhausted — try Azure as cross-provider last resort
+                response, used_model = call_azure_fallback(messages, args.max_tokens, args.temperature)
+                if response is not None:
+                    used_provider = "azure"
+
+        except Exception as e:
+            # Connection error, auth failure, etc. — go straight to Azure
+            if not args.no_fallback:
+                print(f"[ali] ALI error ({type(e).__name__}): {e}", file=sys.stderr)
+                response, used_model = call_azure_fallback(messages, args.max_tokens, args.temperature)
+                if response is not None:
+                    used_provider = "azure"
+
+        if response is None:
+            print("ERROR: All providers failed. Check ALIKEY, AZURE_ENDPOINT, AZURE_APIKEY.", file=sys.stderr)
             sys.exit(1)
 
-    if response is None:
-        print("ERROR: No response received.", file=sys.stderr)
-        sys.exit(1)
 
-    # Log usage if requested
     if args.log_usage and hasattr(response, "usage") and response.usage:
         import datetime
         usage_entry = {
@@ -212,7 +262,9 @@ def main():
         print(response.model_dump_json(indent=2))
     else:
         content = response.choices[0].message.content
-        if used_model != args.model:
+        if used_provider == "azure":
+            print(f"[via azure fallback: {used_model}]")
+        elif used_model != args.model:
             print(f"[via ali fallback: {used_model}]")
         elif hasattr(response, "model") and response.model:
             print(f"[model: {response.model}]")

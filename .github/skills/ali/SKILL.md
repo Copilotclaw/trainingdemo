@@ -12,7 +12,7 @@ Query Alibaba Cloud DashScope (OpenAI-compatible API). Fast, generous quota, vis
 
 ```bash
 python .github/skills/ali/scripts/llm.py \
-  --model qwen3-coder-plus \
+  --model qwen3.5-plus \
   --prompt "Your prompt here"
 ```
 
@@ -20,9 +20,8 @@ python .github/skills/ali/scripts/llm.py \
 
 | Model | Capabilities | Best for |
 |-------|-------------|----------|
-| `qwen3-coder-plus` | Text, Coding | **DEFAULT** — general tasks, code |
-| `qwen3-coder-next` | Text, Coding | Latest coder, cutting-edge |
-| `qwen3.5-plus` | Text + **Vision** + Deep Thinking | Vision tasks, complex reasoning |
+| `qwen3.5-plus` | Text + **Vision** + Deep Thinking | **DEFAULT** — general tasks, reasoning, vision |
+| `qwen3-coder-plus` | Text, Coding | Code-focused tasks |
 | `qwen3-max-2026-01-23` | Text + Deep Thinking | Heavy reasoning |
 | `glm-5` | Text + Deep Thinking | Alternative reasoning (Zhipu) |
 | `glm-4.7` | Text + Deep Thinking | Zhipu lighter model |
@@ -32,7 +31,7 @@ python .github/skills/ali/scripts/llm.py \
 ## Arguments
 
 ```
---model          Model name (default: qwen3-coder-plus)
+--model          Model name (default: qwen3.5-plus)
 --prompt         User prompt (required)
 --system         System prompt (optional)
 --max-tokens     Max output tokens (default: 4096)
@@ -45,16 +44,21 @@ python .github/skills/ali/scripts/llm.py \
 
 ## Rate limit behaviour
 
-On 429/rate limit:
+On 429/rate limit or connection failure:
 1. Retries up to **3 times** with exponential backoff (3s, 6s, 12s)
-2. After retries → falls back to next model in chain
+2. After retries → falls back to next ALI model in chain
+3. If all ALI attempts fail → **cross-provider fallback to Azure** (`grok-4-1-fast-non-reasoning`)
+
+If `ALIKEY` is not set at all, skips directly to the Azure fallback.
 
 ## Required secrets
 
 | Env var | Purpose |
 |---------|---------|
-| `ALIKEY` | Alibaba Cloud API key |
-| `ALIBASE` or `ALIURL` | DashScope base URL (default: `https://dashscope.aliyuncs.com/compatible-mode/v1`) |
+| `ALIKEY` | Alibaba Cloud API key (optional if Azure fallback is configured) |
+| `ALIBASE` or `ALIURL` | DashScope base URL (default: `https://coding-intl.dashscope.aliyuncs.com/v1`) |
+| `AZURE_ENDPOINT` | Azure AI base URL (fallback provider) |
+| `AZURE_APIKEY` | Azure AI key (fallback provider) |
 
 ## Examples
 
@@ -76,7 +80,7 @@ python .github/skills/ali/scripts/llm.py \
 
 # Fast summarization, no fallback
 python .github/skills/ali/scripts/llm.py \
-  --model qwen3-coder-plus \
+  --model qwen3.5-plus \
   --prompt "Summarize: $(cat README.md)" \
   --no-fallback
 
