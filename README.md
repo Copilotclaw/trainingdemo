@@ -43,6 +43,23 @@ jupyter notebook simple-rag-demo.ipynb
 
 ---
 
+## 🏫 PIRAGE RAG Trainingskurs (Deutsch)
+
+Ein vollständiger 3-Tage RAG-Kurs auf Deutsch — basierend auf dem LearnRAG-Material.
+Kein API-Key, kein lokales Setup — läuft in **Google Colab**.
+
+> **PIRAGE**: Parse → Index → Retrieval → Augmented Generation → Evaluation
+
+| Session | Titel | Notebook | Colab |
+|---------|-------|----------|-------|
+| 1 | Grundlagen von RAG + PIRAGE-Framework | [01_grundlagen_rag.ipynb](kurs/session_01_grundlagen/01_grundlagen_rag.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/kurs/session_01_grundlagen/01_grundlagen_rag.ipynb) |
+| 2+3 | Naive RAG — Einrichtung & Chunking | [02_naive_rag.ipynb](kurs/session_02_naive_rag/02_naive_rag.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/kurs/session_02_naive_rag/02_naive_rag.ipynb) |
+| 4–12 | Hybrid RAG, GraphRAG, Agentic RAG… | *(coming soon)* | — |
+
+→ [Vollständige Kursübersicht](kurs/README.md)
+
+---
+
 ## 🛠️ Generating Explainers
 
 Each notebook has an auto-generated HTML explainer. To regenerate or add one for a new notebook:
