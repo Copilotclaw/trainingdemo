@@ -252,10 +252,11 @@ jobs:
             gh issue comment "$ISSUE_NUMBER" --body-file /tmp/agent-response.txt
           fi
 
-          # === AI summary generation (qwen3.5-plus, appended to trainingdemo state) ===
+          # === AI summary generation (qwen3.5-plus via PI, appended to trainingdemo state) ===
           if [ -n "${ALIKEY:-}" ]; then
-            echo "Generating interaction summary via qwen3.5-plus..."
+            echo "Generating interaction summary via PI + qwen3.5-plus..."
             pip install openai -q || true
+            bash .github/skills/ali/scripts/pi-setup.sh || true
             bash .github/scripts/dump-issue.sh "$ISSUE_NUMBER" "$FULL_FILE" || true
             EXISTING_SUM=""
             [ -f "$SUMMARY_FILE" ] && EXISTING_SUM=$(cat "$SUMMARY_FILE")
@@ -268,8 +269,8 @@ jobs:
               SUMMARY_PROMPT=$(printf 'trainingdemo Issue #%s: %s\n\n## Existing running summary\n\n%s\n\n## Latest user comment\n\n%s\n\n## Agent response\n\n%s\n\n---\n\nWrite a brief entry (3-6 sentences) summarizing THIS specific interaction.\nFocus on: what was decided, what was built, topic covered, artifacts created.\nStart with a markdown H3 heading: ### YYYY-MM-DD (use todays UTC date).\nDo NOT rewrite the existing summary. Output ONLY the new entry to append.' \
                 "$ISSUE_NUMBER" "$TITLE" "$EXISTING_SUM" "$NEW_INPUT" "$AGENT_TEXT")
               ALI_STDERR_LOG=$(mktemp)
-              NEW_ENTRY=$(python .github/skills/ali/scripts/llm.py \
-                --model qwen3.5-plus \
+              NEW_ENTRY=$(python .github/skills/ali/scripts/pi-llm.py \
+                --model qwen3-coder-plus \
                 --system "$SUMMARY_SYSTEM" \
                 --prompt "$SUMMARY_PROMPT" 2>"$ALI_STDERR_LOG") || true
               [ -s "$ALI_STDERR_LOG" ] && cat "$ALI_STDERR_LOG"
