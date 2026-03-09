@@ -1,0 +1,314 @@
+name: Crunch @ trainingdemo
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: trainingdemo-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  actions: write
+  pull-requests: write
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    if: >
+      (
+        github.event_name == 'issues' &&
+        (
+          github.event.sender.type == 'Bot' ||
+          contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+        )
+      ) ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.sender.type == 'User' &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+        !contains(github.event.comment.body, '<!-- crunch:posted -->')
+      )
+    steps:
+      - name: Checkout trainingdemo (primary workspace)
+        uses: actions/checkout@v4
+
+      - name: Checkout copilotclaw (agent tools + identity)
+        uses: actions/checkout@v4
+        with:
+          repository: Copilotclaw/copilotclaw
+          token: ${{ secrets.COPILOT_PAT }}
+          path: _crunch
+
+      - name: Set up agent workspace
+        run: |
+          # Copy Crunch's identity and tools into trainingdemo workspace
+          cp _crunch/AGENTS.md ./AGENTS.md
+          cp _crunch/memory.log ./memory.log 2>/dev/null || true
+          mkdir -p state/memory
+          cp -r _crunch/state/memory/. ./state/memory/ 2>/dev/null || true
+          mkdir -p .github/skills .github/scripts .github/skills/ali
+          cp -r _crunch/.github/skills/. ./.github/skills/ 2>/dev/null || true
+          cp -r _crunch/.github/scripts/. ./.github/scripts/ 2>/dev/null || true
+
+      - name: Validate COPILOT_PAT
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token ${COPILOT_GITHUB_TOKEN}" \
+            https://api.github.com/user)
+          if [[ "$HTTP_STATUS" =~ ^5 ]]; then
+            sleep 5
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "Authorization: token ${COPILOT_GITHUB_TOKEN}" \
+              https://api.github.com/user)
+          fi
+          if [ "$HTTP_STATUS" = "401" ]; then
+            ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
+            gh issue comment "$ISSUE_NUMBER" \
+              --body "🚨 **COPILOT_PAT is expired or revoked (HTTP 401)** — Crunch is offline. Fix: https://github.com/settings/tokens → update secret at https://github.com/Copilotclaw/trainingdemo/settings/secrets/actions"
+            exit 1
+          fi
+
+      - name: Add eyes reaction
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
+          if [ "$GITHUB_EVENT_NAME" = "issue_comment" ]; then
+            COMMENT_ID=$(jq -r '.comment.id' "$GITHUB_EVENT_PATH")
+            REACTION_ID=$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$COMMENT_ID/reactions" \
+              -f content=eyes --jq '.id')
+            printf 'reaction_target=comment\nreaction_id=%s\ncomment_id=%s\n' \
+              "$REACTION_ID" "$COMMENT_ID" > /tmp/reaction-state.env
+          else
+            REACTION_ID=$(gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/reactions" \
+              -f content=eyes --jq '.id')
+            printf 'reaction_target=issue\nreaction_id=%s\n' \
+              "$REACTION_ID" > /tmp/reaction-state.env
+          fi
+
+      - name: Install Copilot CLI
+        run: npm install -g @github/copilot
+
+      - name: Run agent
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
+          BILLING_PAT: ${{ secrets.COPILOT_PAT }}
+          COPILOT_ALLOW_ALL: "true"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ALIKEY: ${{ secrets.ALIKEY }}
+          AZURE_ENDPOINT: ${{ secrets.AZURE_ENDPOINT }}
+          AZURE_APIKEY: ${{ secrets.AZURE_APIKEY }}
+        run: |
+          set -euo pipefail
+
+          # Auth: use Copilot PAT for gh CLI
+          _GITHUB_TOKEN="$GITHUB_TOKEN"
+          unset GITHUB_TOKEN
+          echo "$COPILOT_GITHUB_TOKEN" | gh auth login --with-token
+          export GITHUB_TOKEN="$_GITHUB_TOKEN"
+
+          ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
+          TITLE=$(jq -r '.issue.title' "$GITHUB_EVENT_PATH")
+          BODY=$(jq -r '.issue.body // ""' "$GITHUB_EVENT_PATH")
+
+          # Git config (for committing to trainingdemo)
+          git config user.name "gitclaw[bot]"
+          git config user.email "gitclaw[bot]@users.noreply.github.com"
+
+          # Prevent agent-injected temp files from being committed
+          cat >> .gitignore << 'GITIGNORE_APPEND'
+_crunch/
+AGENTS.md
+HEARTBEAT.md
+memory.log
+state/memory/
+state/copilot/
+GITIGNORE_APPEND
+
+          # Session mapping (per-issue, stored in trainingdemo)
+          MAPPING_FILE="state/sessions/${ISSUE_NUMBER}.json"
+          mkdir -p state/sessions state/issues
+          SESSION_ID=""
+          if [ -f "$MAPPING_FILE" ]; then
+            SESSION_ID=$(jq -r '.sessionId // ""' "$MAPPING_FILE" 2>/dev/null || true)
+            echo "Resuming session: $SESSION_ID for issue #$ISSUE_NUMBER"
+          fi
+
+          # Context files (stored in trainingdemo — not in copilotclaw)
+          FULL_FILE="state/issues/${ISSUE_NUMBER}.full.md"
+          SUMMARY_FILE="state/issues/${ISSUE_NUMBER}.sum.md"
+
+          # Dump full thread from trainingdemo repo
+          bash .github/scripts/dump-issue.sh "$ISSUE_NUMBER" "$FULL_FILE"
+
+          # Build prompt
+          if [ "$GITHUB_EVENT_NAME" = "issue_comment" ]; then
+            NEW_INPUT=$(jq -r '.comment.body' "$GITHUB_EVENT_PATH")
+          else
+            NEW_INPUT=$(printf '%s\n\n%s' "$TITLE" "$BODY")
+          fi
+
+          # Overflow guard
+          MSG_FILE="state/issues/${ISSUE_NUMBER}-msg.md"
+          MSG_REF="$NEW_INPUT"
+          if [ "${#NEW_INPUT}" -gt 4000 ]; then
+            printf '%s' "$NEW_INPUT" > "$MSG_FILE"
+            git add "$MSG_FILE"
+            if ! git diff --cached --quiet "$MSG_FILE"; then
+              git commit -m "chore: overflow message for trainingdemo issue #${ISSUE_NUMBER}
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+            fi
+            MSG_REF="*(message too large for inline — read full content from \`${MSG_FILE}\`)*"
+          fi
+
+          # Build prompt with summary context if available
+          if [ -f "$SUMMARY_FILE" ]; then
+            SUMMARY_CONTENT=$(cat "$SUMMARY_FILE")
+            PROMPT=$(printf '## trainingdemo Issue #%s: %s\n\nYou are Crunch 🦃 working in the **trainingdemo** repo. Create files, notebooks, and all output directly in this repo (current working directory is trainingdemo root).\n\n**Context summary** (state/issues/%s.sum.md):\n\n%s\n\n---\n\n**New message:**\n\n%s\n\n---\n\nFull thread: state/issues/%s.full.md' \
+              "$ISSUE_NUMBER" "$TITLE" \
+              "$ISSUE_NUMBER" "$SUMMARY_CONTENT" \
+              "$MSG_REF" \
+              "$ISSUE_NUMBER")
+          else
+            PROMPT=$(printf '## trainingdemo Issue #%s: %s\n\nYou are Crunch 🦃 working in the **trainingdemo** repo (see AGENTS.md for your full identity). Create files, notebooks, and all output directly in this repo — the current working directory IS trainingdemo root.\n\n**New message:**\n\n%s\n\n---\n\nFull thread: state/issues/%s.full.md' \
+              "$ISSUE_NUMBER" "$TITLE" \
+              "$MSG_REF" \
+              "$ISSUE_NUMBER")
+          fi
+
+          # Run agent
+          touch /tmp/copilot-run-start
+          COPILOT_ARGS=(copilot --allow-all
+            --add-github-mcp-toolset issues
+            --add-github-mcp-toolset repos
+            --add-github-mcp-toolset pull_requests
+            --add-github-mcp-toolset actions
+            --add-github-mcp-toolset labels
+            --add-github-mcp-toolset search
+            -s -p "$PROMPT")
+          if [ -n "$SESSION_ID" ]; then
+            COPILOT_ARGS+=(--resume "$SESSION_ID")
+          fi
+          AGENT_TEXT=$(XDG_STATE_HOME=./state/copilot "${COPILOT_ARGS[@]}" 2>/tmp/copilot-stderr.txt) || true
+          if [ -z "$AGENT_TEXT" ] && [ -s /tmp/copilot-stderr.txt ]; then
+            echo "=== copilot CLI stderr ===" && cat /tmp/copilot-stderr.txt
+          fi
+
+          # Discover session ID
+          if [ -z "$SESSION_ID" ]; then
+            NEWEST_PATH=$(find ./state/copilot -mindepth 3 -maxdepth 3 -type d \
+              -newer /tmp/copilot-run-start 2>/dev/null | head -1)
+            if [ -n "$NEWEST_PATH" ]; then
+              SESSION_ID=$(basename "$NEWEST_PATH")
+              echo "New session ID: $SESSION_ID"
+            fi
+          fi
+
+          # Save session mapping
+          if [ -n "$SESSION_ID" ]; then
+            mkdir -p state/sessions
+            jq -n --argjson n "$ISSUE_NUMBER" --arg id "$SESSION_ID" \
+              --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              '{issueNumber: $n, sessionId: $id, updatedAt: $ts}' > "$MAPPING_FILE"
+          fi
+
+          # Commit and push to trainingdemo
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "gitclaw: work on trainingdemo issue #$ISSUE_NUMBER
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          fi
+          for i in 1 2 3; do
+            if git push origin main; then break; fi
+            echo "Push failed, rebasing ($i/3)..."
+            git pull --rebase --autostash origin main || { git rebase --abort 2>/dev/null || true; break; }
+          done
+
+          # Comment on issue
+          if [ -z "$AGENT_TEXT" ]; then
+            AGENT_TEXT="🦃 Crunch: agent ran but returned no output. Check Actions logs."
+          fi
+
+          # Cross-posting guard
+          SHOULD_POST=true
+          if [ "$GITHUB_EVENT_NAME" = "issue_comment" ]; then
+            TRIGGER_TIME=$(jq -r '.comment.created_at' "$GITHUB_EVENT_PATH")
+            BOT_REPLIED=$(gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=20" \
+              --jq "[.[] | select(.user.login == \"github-actions[bot]\") | select(.created_at > \"$TRIGGER_TIME\")] | length" 2>/dev/null || echo "0")
+            if [ "${BOT_REPLIED:-0}" -gt 0 ] 2>/dev/null; then
+              echo "Cross-posting guard: bot already replied. Skipping."
+              SHOULD_POST=false
+            fi
+          fi
+
+          if [ "$SHOULD_POST" = "true" ]; then
+            printf '%s\n\n<!-- crunch:posted -->' "$AGENT_TEXT" | head -c 60000 > /tmp/agent-response.txt
+            gh issue comment "$ISSUE_NUMBER" --body-file /tmp/agent-response.txt
+          fi
+
+          # === AI summary generation (qwen3.5-plus, appended to trainingdemo state) ===
+          if [ -n "${ALIKEY:-}" ]; then
+            echo "Generating interaction summary via qwen3.5-plus..."
+            pip install openai -q || true
+            bash .github/scripts/dump-issue.sh "$ISSUE_NUMBER" "$FULL_FILE" || true
+            EXISTING_SUM=""
+            [ -f "$SUMMARY_FILE" ] && EXISTING_SUM=$(cat "$SUMMARY_FILE")
+            COMBINED_LEN=$(( ${#NEW_INPUT} + ${#AGENT_TEXT} ))
+            TODAY=$(date -u +%Y-%m-%d)
+            if [ "$COMBINED_LEN" -le 600 ]; then
+              NEW_ENTRY=$(printf '### %s\n**User:** %s\n\n**Crunch:** %s' "$TODAY" "$NEW_INPUT" "$AGENT_TEXT")
+            else
+              SUMMARY_SYSTEM="You are a technical learning archivist for a GitHub issue in a training repo. Output only clean markdown, no preamble or commentary."
+              SUMMARY_PROMPT=$(printf 'trainingdemo Issue #%s: %s\n\n## Existing running summary\n\n%s\n\n## Latest user comment\n\n%s\n\n## Agent response\n\n%s\n\n---\n\nWrite a brief entry (3-6 sentences) summarizing THIS specific interaction.\nFocus on: what was decided, what was built, topic covered, artifacts created.\nStart with a markdown H3 heading: ### YYYY-MM-DD (use todays UTC date).\nDo NOT rewrite the existing summary. Output ONLY the new entry to append.' \
+                "$ISSUE_NUMBER" "$TITLE" "$EXISTING_SUM" "$NEW_INPUT" "$AGENT_TEXT")
+              ALI_STDERR_LOG=$(mktemp)
+              NEW_ENTRY=$(python .github/skills/ali/scripts/llm.py \
+                --model qwen3.5-plus \
+                --system "$SUMMARY_SYSTEM" \
+                --prompt "$SUMMARY_PROMPT" 2>"$ALI_STDERR_LOG") || true
+              [ -s "$ALI_STDERR_LOG" ] && cat "$ALI_STDERR_LOG"
+              rm -f "$ALI_STDERR_LOG"
+            fi
+            if [ -n "$NEW_ENTRY" ]; then
+              printf '\n\n%s' "$NEW_ENTRY" >> "$SUMMARY_FILE"
+              git add "$SUMMARY_FILE"
+              if ! git diff --cached --quiet; then
+                git commit -m "chore: append interaction summary for trainingdemo issue #${ISSUE_NUMBER}
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+                for i in 1 2 3; do
+                  if git push origin main; then break; fi
+                  git pull --rebase --autostash origin main || { git rebase --abort 2>/dev/null || true; break; }
+                done
+              fi
+              echo "✅ Summary appended to trainingdemo state"
+            fi
+          fi
+          # === END AI summary generation ===
+
+      - name: Remove eyes reaction
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -f /tmp/reaction-state.env ] || exit 0
+          source /tmp/reaction-state.env
+          ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
+          if [ "$reaction_target" = "comment" ]; then
+            gh api "repos/$GITHUB_REPOSITORY/issues/comments/${comment_id}/reactions/${reaction_id}" \
+              -X DELETE || true
+          else
+            gh api "repos/$GITHUB_REPOSITORY/issues/${ISSUE_NUMBER}/reactions/${reaction_id}" \
+              -X DELETE || true
+          fi
