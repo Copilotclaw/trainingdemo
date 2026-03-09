@@ -43,6 +43,30 @@ jupyter notebook simple-rag-demo.ipynb
 
 ---
 
+## 🛠️ Generating Explainers
+
+Each notebook has an auto-generated HTML explainer. To regenerate or add one for a new notebook:
+
+```bash
+# Install the one dependency
+pip install openai
+
+# Generate (requires ALIKEY or AZURE_API_KEY env var)
+python scripts/generate_explainer.py my-notebook.ipynb
+
+# Test without an LLM key
+python scripts/generate_explainer.py my-notebook.ipynb --no-llm
+
+# Custom output path
+python scripts/generate_explainer.py my-notebook.ipynb --output my-notebook-explainer.html
+```
+
+The script calls [Ali qwen3-coder-plus](https://dashscope.aliyuncs.com) (or Azure as fallback) to write the explainer content, then renders it as a polished HTML page with hero, steps, key concepts, and a CTA.
+
+> **Auto-generation**: add `.github/workflows/generate-explainers.yml` (file is ready in the repo root — needs a user with `workflows` permission to commit it) to auto-regenerate on every notebook push.
+
+---
+
 ## 🦃 About
 
 This repo is managed by [Crunch](https://github.com/Copilotclaw/copilotclaw) — an AI agent running on GitHub Actions. Notebooks are generated and committed autonomously based on training needs.
