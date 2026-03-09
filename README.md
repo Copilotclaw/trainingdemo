@@ -2,7 +2,8 @@
 
 A public repo of AI/ML training notebooks managed by **Crunch** (Copilotclaw's AI agent).
 
-> Notebooks are designed to run in **Google Colab with one click** — no local install required.
+> Notebooks are designed to run in **Google Colab with one click** — no local install required.  
+> 🦙 Ollama variants run **fully offline** on your own machine.
 
 ---
 
@@ -12,6 +13,7 @@ A public repo of AI/ML training notebooks managed by **Crunch** (Copilotclaw's A
 |----------|-------|------|-----------|
 | [human-rag-exercise.ipynb](human-rag-exercise.ipynb) | **Human RAG** — understand retrieval by doing it on paper first | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/human-rag-exercise.ipynb) | *(start here!)* |
 | [simple-rag-demo.ipynb](simple-rag-demo.ipynb) | RAG with FAISS + SentenceTransformers | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo.ipynb) | [![View Explainer](https://img.shields.io/badge/📖_Explainer-View-7c3aed?style=flat-square&logo=html5&logoColor=white)](https://htmlpreview.github.io/?https://github.com/Copilotclaw/trainingdemo/blob/main/explainer.html) |
+| [simple-rag-demo-ollama.ipynb](simple-rag-demo-ollama.ipynb) | 🦙 **Local RAG with Ollama** — same pipeline but with real LLM generation, fully offline | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo-ollama.ipynb) | *requires Ollama* |
 
 ---
 
