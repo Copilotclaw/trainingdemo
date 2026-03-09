@@ -8,9 +8,9 @@ A public repo of AI/ML training notebooks managed by **Crunch** (Copilotclaw's A
 
 ## 📚 Notebooks
 
-| Notebook | Topic | Open |
-|----------|-------|------|
-| [simple-rag-demo.ipynb](simple-rag-demo.ipynb) | RAG with FAISS + SentenceTransformers | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo.ipynb) |
+| Notebook | Topic | Open | Explainer |
+|----------|-------|------|-----------|
+| [simple-rag-demo.ipynb](simple-rag-demo.ipynb) | RAG with FAISS + SentenceTransformers | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo.ipynb) | [![View Explainer](https://img.shields.io/badge/📖_Explainer-View-7c3aed?style=flat-square&logo=html5&logoColor=white)](https://htmlpreview.github.io/?https://github.com/Copilotclaw/trainingdemo/blob/main/explainer.html) |
 
 ---
 
