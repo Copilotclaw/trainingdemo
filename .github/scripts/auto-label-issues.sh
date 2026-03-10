@@ -27,7 +27,7 @@ SKIP_ISSUES="10 11"
 echo "🏷️  Auto-labeling unlabeled issues..."
 
 # Get unlabeled open issues via platform API
-ISSUES_JSON=$(api_get "repos/$REPO/issues?state=open&type=issues&per_page=50" || echo "[]")
+ISSUES_JSON=$(api_get "repos/$REPO/issues?state=open&per_page=50" || echo "[]")
 UNLABELED=$(echo "$ISSUES_JSON" | jq -r \
   '.[] | select((.labels | length == 0) and (.pull_request == null)) | "\(.number)\t\(.title)\t\(.body // "" | gsub("\n";" ") | .[0:300])"' \
   2>/dev/null || echo "")

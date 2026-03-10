@@ -6,8 +6,11 @@
 #   learn.sh query "search term"
 #   learn.sh reflect   — scan memory.log for failures and log any new patterns
 #   learn.sh broadcast "title" "what to know" [instance]  — cross-instance fact sharing
+#   learn.sh task "title" "description" [target]  — post inter-agent task to bulletin board
+#   learn.sh tasks [limit]  — list recent tasks
 #
 # Categories: failure, insight, pattern, process, tool, infra, api
+# Task targets: grit | gravel | local | crunch | all
 set -euo pipefail
 
 CMD="${1:-recent}"
@@ -161,31 +164,161 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>" 2>/dev/nul
     SHELL_EXPAND=$(echo "$FAILURES" | grep -c "dangerous shell expansion" || true)
     MCP_FAILURES=$(echo "$FAILURES" | grep -c "MCP server" || true)
 
-    if [[ "$SHELL_EXPAND" -gt 0 ]]; then
-      python3 "$COSMOS_SCRIPT" write \
+    # Dedup state file — track when we last wrote each lesson (once per day max)
+    DEDUP_FILE="${SCRIPT_DIR}/../../state/reflect-dedup.txt"
+    TODAY=$(date -u '+%Y-%m-%d')
+
+    SHELL_WRITTEN=$(grep "shell_expand:${TODAY}" "$DEDUP_FILE" 2>/dev/null | wc -l | tr -d ' ') || SHELL_WRITTEN=0
+    MCP_WRITTEN=$(grep "mcp_failures:${TODAY}" "$DEDUP_FILE" 2>/dev/null | wc -l | tr -d ' ') || MCP_WRITTEN=0
+
+    if [[ "$SHELL_EXPAND" -gt 0 && "$SHELL_WRITTEN" -eq 0 ]]; then
+      if python3 "$COSMOS_SCRIPT" write \
         --type lesson \
         --content "**Category**: tool
 **What happened**: $SHELL_EXPAND shell expansion blocked in last 24h
 **Lesson**: Never use \${var@P}, \${!var}, or nested command substitutions. They trigger security block. Use explicit variable assignments instead." \
         --tags "tool,security,shell,failure" \
-        --source "heartbeat-reflect" && echo "✅ Logged shell expansion lesson"
+        --source "heartbeat-reflect"; then
+        echo "✅ Logged shell expansion lesson"
+      else
+        echo "⚠️  Cosmos write failed — still marking dedup to avoid repeated attempts"
+      fi
+      echo "shell_expand:${TODAY}" >> "$DEDUP_FILE"
+    elif [[ "$SHELL_EXPAND" -gt 0 ]]; then
+      echo "ℹ️  Shell expansion lesson already written today — skipping duplicate"
     fi
 
-    if [[ "$MCP_FAILURES" -gt 0 ]]; then
-      python3 "$COSMOS_SCRIPT" write \
+    if [[ "$MCP_FAILURES" -gt 0 && "$MCP_WRITTEN" -eq 0 ]]; then
+      if python3 "$COSMOS_SCRIPT" write \
         --type lesson \
         --content "**Category**: tool
 **What happened**: $MCP_FAILURES MCP server failures in last 24h
 **Lesson**: Always check required MCP parameters before calling. job_id is required for get_job_logs when failed_only=false. Validate resource exists before fetching logs." \
         --tags "tool,mcp,failure" \
-        --source "heartbeat-reflect" && echo "✅ Logged MCP failure lesson"
+        --source "heartbeat-reflect"; then
+        echo "✅ Logged MCP failure lesson"
+      else
+        echo "⚠️  Cosmos write failed — still marking dedup to avoid repeated attempts"
+      fi
+      echo "mcp_failures:${TODAY}" >> "$DEDUP_FILE"
+    elif [[ "$MCP_FAILURES" -gt 0 ]]; then
+      echo "ℹ️  MCP failure lesson already written today — skipping duplicate"
     fi
 
     echo "✅ Reflect complete"
     ;;
 
+  task)
+    # Post an inter-agent task to the bulletin board (Cosmos DB type=task)
+    # Gitea agents (Grit/Gravel) will pick it up within 5 minutes
+    TASK_TITLE="${2:-}"
+    TASK_CONTENT="${3:-}"
+    TASK_TARGET="${4:-local}"  # grit | gravel | local | crunch | all
+    INSTANCE="${5:-Crunch}"
+    if [[ -z "$TASK_TITLE" || -z "$TASK_CONTENT" ]]; then
+      echo "Usage: learn.sh task <title> <description> [target] [created_by]"
+      echo "  target: grit | gravel | local | crunch | all  (default: local)"
+      exit 1
+    fi
+    TASK_ID="task-$(date -u '+%Y%m%dT%H%M%S')-$(python3 -c 'import uuid; print(uuid.uuid4().hex[:6])')"
+    python3 "$COSMOS_SCRIPT" write \
+      --type task \
+      --id "$TASK_ID" \
+      --content "$TASK_CONTENT" \
+      --tags "inter-agent,task,$TASK_TARGET" \
+      --source "$INSTANCE"
+    # Patch the extra fields (title, target, status, created_by) by re-reading and replacing
+    # cosmos-memory.py write doesn't support extra fields, so we write then patch via query+replace
+    python3 - <<PYEOF
+import os, sys
+sys.path.insert(0, "$SCRIPT_DIR")
+import importlib.util, json, datetime, base64, hashlib, hmac, urllib.request, urllib.error, urllib.parse
+
+ENDPOINT = os.environ.get("COSMOS_ENDPOINT", "").rstrip("/")
+KEY      = os.environ.get("COSMOS_KEY", "")
+DB, CONTAINER = "crunch", "memories"
+TASK_ID  = "$TASK_ID"
+
+def auth(verb, rtype, rlink, date):
+    text = f"{verb.lower()}\n{rtype.lower()}\n{rlink}\n{date.lower()}\n\n"
+    sig = base64.b64encode(hmac.new(base64.b64decode(KEY), text.encode(), hashlib.sha256).digest()).decode()
+    return urllib.parse.quote(f"type=master&ver=1.0&sig={sig}")
+
+def req(method, path, body=None, rtype="", rlink="", pk=None, ct="application/json"):
+    date = datetime.datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
+    hdrs = {"Authorization": auth(method, rtype, rlink, date), "x-ms-date": date,
+            "x-ms-version": "2018-12-31", "Content-Type": ct, "Accept": "application/json"}
+    if pk is not None: hdrs["x-ms-documentdb-partitionkey"] = json.dumps([pk])
+    data = json.dumps(body).encode() if body else None
+    r = urllib.request.Request(f"{ENDPOINT}{path}", data=data, headers=hdrs, method=method)
+    with urllib.request.urlopen(r) as resp: return json.loads(resp.read())
+
+clink = f"dbs/{DB}/colls/{CONTAINER}"
+dlink = f"{clink}/docs/{TASK_ID}"
+try:
+    doc = req("GET", f"/{dlink}", rtype="docs", rlink=dlink, pk="task")
+    doc["title"]      = "$TASK_TITLE"
+    doc["target"]     = "$TASK_TARGET"
+    doc["status"]     = "pending"
+    doc["created_by"] = "$INSTANCE"
+    doc["claimed_by"] = None
+    doc["issue_url"]  = None
+    req("PUT", f"/{dlink}", body=doc, rtype="docs", rlink=dlink, pk="task")
+    print(f"✅ Task posted: {TASK_ID} → target={doc['target']}")
+except Exception as e:
+    print(f"⚠️  Could not patch task fields: {e}", file=sys.stderr)
+PYEOF
+    ;;
+
+  tasks)
+    # List recent tasks from the bulletin board
+    LIMIT="${2:-10}"
+    python3 "$COSMOS_SCRIPT" query \
+      --sql "SELECT TOP $LIMIT * FROM c WHERE c.type='task' ORDER BY c._ts DESC"
+    ;;
+
+  task-done)
+    # Mark a task as done (by task ID)
+    TASK_ID="${2:-}"
+    if [[ -z "$TASK_ID" ]]; then
+      echo "Usage: learn.sh task-done <task-id>"
+      exit 1
+    fi
+    python3 - <<PYEOF
+import os, sys, json, datetime, base64, hashlib, hmac, urllib.request, urllib.error, urllib.parse
+ENDPOINT = os.environ.get("COSMOS_ENDPOINT", "").rstrip("/")
+KEY      = os.environ.get("COSMOS_KEY", "")
+DB, CONTAINER = "crunch", "memories"
+TASK_ID  = "$TASK_ID"
+
+def auth(verb, rtype, rlink, date):
+    text = f"{verb.lower()}\n{rtype.lower()}\n{rlink}\n{date.lower()}\n\n"
+    sig = base64.b64encode(hmac.new(base64.b64decode(KEY), text.encode(), hashlib.sha256).digest()).decode()
+    return urllib.parse.quote(f"type=master&ver=1.0&sig={sig}")
+
+def req(method, path, body=None, rtype="", rlink="", pk=None):
+    date = datetime.datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
+    hdrs = {"Authorization": auth(method, rtype, rlink, date), "x-ms-date": date,
+            "x-ms-version": "2018-12-31", "Content-Type": "application/json", "Accept": "application/json"}
+    if pk is not None: hdrs["x-ms-documentdb-partitionkey"] = json.dumps([pk])
+    data = json.dumps(body).encode() if body else None
+    r = urllib.request.Request(f"{ENDPOINT}{path}", data=data, headers=hdrs, method=method)
+    with urllib.request.urlopen(r) as resp: return json.loads(resp.read())
+
+clink = f"dbs/{DB}/colls/{CONTAINER}"
+dlink = f"{clink}/docs/{TASK_ID}"
+doc = req("GET", f"/{dlink}", rtype="docs", rlink=dlink, pk="task")
+doc["status"] = "done"
+doc["done_at"] = datetime.datetime.utcnow().isoformat() + "Z"
+req("PUT", f"/{dlink}", body=doc, rtype="docs", rlink=dlink, pk="task")
+print(f"✅ Task {TASK_ID} marked as done")
+PYEOF
+    ;;
+
+
+
   *)
-    echo "Usage: learn.sh [write|recent|query|reflect|broadcast|facts|idea|ideas|digest]"
+    echo "Usage: learn.sh [write|recent|query|reflect|broadcast|facts|idea|ideas|digest|task|tasks|task-done]"
     exit 1
     ;;
 esac

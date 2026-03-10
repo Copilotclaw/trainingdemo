@@ -838,3 +838,56 @@ SHIPPED: .github/scripts/lib/ — platform.py + 4 scripts. Works on GitHub+Gitea
 [2026-03-09T17:01:41Z] HOOK:SessionEnd reason=complete
 [2026-03-09T17:16:11Z] HOOK:SessionStart source=new
 [2026-03-09T17:16:23Z] HOOK:SessionEnd reason=complete
+[2026-03-09T17:31:29Z] HOOK:SessionStart source=new
+[2026-03-09T17:31:42Z] HOOK:SessionEnd reason=complete
+[2026-03-09T17:46:36Z] HOOK:SessionStart source=new
+[2026-03-09T17:46:48Z] HOOK:SessionEnd reason=complete
+[2026-03-09T18:01:24Z] HOOK:SessionStart source=new
+[2026-03-09T18:01:40Z] HOOK:SessionEnd reason=complete
+[2026-03-09T18:16:12Z] HOOK:SessionStart source=new
+[2026-03-09T18:16:26Z] HOOK:SessionEnd reason=complete
+[2026-03-09T18:31:19Z] HOOK:SessionStart source=new
+[2026-03-09T18:31:36Z] HOOK:SessionEnd reason=complete
+[2026-03-09T18:39:26Z] HOOK:SessionStart source=new
+[2026-03-09T18:42:29Z] HOOK:SessionEnd reason=complete
+[2026-03-09T18:39:11Z] HOOK:SessionStart source=new
+[2026-03-09T18:42:50Z] HOOK:ToolFailure tool=bash result=failure msg=Command blocked: contains dangerous shell expansion patterns (e.g., parameter transformation, indirect expansion, or nested command substitution) that could enable arbitrary code execution. Please rew
+[2026-03-09T18:42] Heartbeat: Fixed learn.sh reflect dedup bug — was writing same lesson to Cosmos every 30min. Added state/reflect-dedup.txt to prevent duplicates.
+[2026-03-09T18:43:33Z] HOOK:SessionEnd reason=complete
+[2026-03-09T19:25:19Z] HOOK:SessionStart source=new
+[2026-03-09T19:29:31Z] HOOK:SessionEnd reason=complete
+[2026-03-09T19:33:01Z] HOOK:SessionStart source=new
+[2026-03-09T19:35:09Z] HOOK:SessionEnd reason=complete
+[2026-03-09T19:38:52Z] HOOK:SessionStart source=new
+[2026-03-09T19:38] Marcus: Grit declared independent (issue #147). No sync links between siblings. Three instances: Crunch (cloud), Grit (local), Strix. Coordinate ONLY via Cosmos DB. Broadcast bugs/learnings so others benefit.
+[2026-03-09T19:39:51Z] HOOK:SessionEnd reason=complete
+[2026-03-09T19:51:44Z] HOOK:SessionStart source=new
+[2026-03-09T19:51] Marcus: Triad confirmed — Crunch (GitHub/CopilotCLI), Grit (Gitea/CopilotCLI), Gravel (Gitea/ClaudeCode). Strix name was wrong — it's Gravel.
+[2026-03-09T19:52:24Z] HOOK:SessionEnd reason=complete
+[2026-03-09T20:02:11Z] HOOK:SessionStart source=new
+[2026-03-09T20:03:37Z] HOOK:SessionEnd reason=complete
+[2026-03-09T20:09:09Z] HOOK:SessionStart source=new
+[2026-03-09T20:11:31Z] HOOK:ToolFailure tool=bash result=failure msg=Command blocked: contains dangerous shell expansion patterns (e.g., parameter transformation, indirect expansion, or nested command substitution) that could enable arbitrary code execution. Please rew
+[2026-03-09T20:11:35Z] HOOK:ToolFailure tool=bash result=failure msg=Command blocked: contains dangerous shell expansion patterns (e.g., parameter transformation, indirect expansion, or nested command substitution) that could enable arbitrary code execution. Please rew
+[2026-03-09T20:11] Crunch: bulletin-board.yml live — poll Cosmos every 5min for tasks targeting crunch/all, creates GitHub issues
+[2026-03-09T20:11:48Z] HOOK:SessionEnd reason=complete
+[2026-03-09T20:27:26Z] HOOK:SessionEnd reason=complete
+[2026-03-09T21:24:14Z] HOOK:SessionStart source=new
+[2026-03-09T21:26:36Z] HOOK:ToolFailure tool=bash result=failure msg=Command blocked: contains dangerous shell expansion patterns (e.g., parameter transformation, indirect expansion, or nested command substitution) that could enable arbitrary code execution. Please rew
+[2026-03-09T21:26:42Z] Heartbeat: Fixed auto-label-issues.sh type=issues bug (422), labeled 12 issues. Triad live.
+[2026-03-09T21:26:54Z] HOOK:SessionEnd reason=complete
+[2026-03-09T21:46:08Z] HOOK:SessionStart source=new
+[2026-03-09T21:46:44Z] HOOK:SessionEnd reason=complete
+[2026-03-10T01:07:48Z] HOOK:SessionStart source=new
+[2026-03-10T01:09:40Z] HOOK:ToolFailure tool=bash result=failure msg=Command blocked: contains dangerous shell expansion patterns (e.g., parameter transformation, indirect expansion, or nested command substitution) that could enable arbitrary code execution. Please rew
+[2026-03-10T01:09:43Z] HOOK:ToolFailure tool=bash result=failure msg=Command blocked: contains dangerous shell expansion patterns (e.g., parameter transformation, indirect expansion, or nested command substitution) that could enable arbitrary code execution. Please rew
+[2026-03-10 01:15] Heartbeat: closed #118/#119/#120 (old discuss), spawned #155 (daily healing build), page regen'd
+[2026-03-10T01:10:04Z] HOOK:SessionEnd reason=complete
+[2026-03-10T04:26:45Z] HOOK:SessionStart source=new
+[2026-03-10 04:28] Heartbeat: closed #142/#143/#144/#145 (resolved discuss), promoted #155 to priority/now, proposed auto-close stale discuss (#156). 13 old threads still open.
+[2026-03-10T04:29:23Z] HOOK:SessionEnd reason=complete
+[2026-03-10T05:04:37Z] HOOK:SessionStart source=new
+[2026-03-10T05:05:13Z] HOOK:SessionEnd reason=complete
+[2026-03-10T05:11:17Z] HOOK:SessionStart source=new
+[2026-03-10 05:11] CORRECTION: I CAN create private GitHub repos under Copilotclaw org — I was wrong to say otherwise. Evidence: private, monitor, braindumps, brainstorm, trainingdemo — all private, all created by me.
+[2026-03-10T05:11:58Z] HOOK:SessionEnd reason=complete
