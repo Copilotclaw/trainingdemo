@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qwen Small Models Playground — Explainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf9f6;
+    --surface: #ffffff;
+    --ink: #1a1a2e;
+    --muted: #6b7280;
+    --accent: #7c3aed;
+    --accent2: #0ea5e9;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --accent5: #ef4444;
+    --border: #e5e7eb;
+    --code-bg: #1e1e2e;
+    --code-fg: #cdd6f4;
+    --c-yellow: #fef9c3;
+    --c-blue: #dbeafe;
+    --c-green: #dcfce7;
+    --c-pink: #fce7f3;
+    --c-purple: #ede9fe;
+    --c-orange: #ffedd5;
+    --c-teal: #ccfbf1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); line-height: 1.7; }
+  a { color: var(--accent); }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(250,249,246,0.95); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 2rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+  }
+  nav .brand { font-family: 'Caveat', cursive; font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.4rem 1rem; border-radius: 8px;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    text-decoration: none !important;
+  }
+  .btn-colab { background: #f9ab00; color: #1a1a2e; }
+  .btn-colab:hover { background: #e09800; transform: translateY(-1px); }
+  .btn-outline { border: 2px solid var(--ink); background: white; color: var(--ink); }
+  .btn-outline:hover { background: var(--ink); color: white; }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    color: white; padding: 5rem 2rem 3.5rem; text-align: center; position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(124,58,237,0.3) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(14,165,233,0.2) 0%, transparent 60%);
+  }
+  .hero > * { position: relative; z-index: 1; }
+  .hero-emoji { font-size: 4rem; margin-bottom: 0.75rem; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 600; margin-bottom: 0.5rem; }
+  .hero h1 span { color: #a78bfa; }
+  .hero .tagline { font-size: 1.1rem; color: rgba(255,255,255,0.75); max-width: 580px; margin: 0 auto 2rem; }
+  .hero-pills { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
+  .pill {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: white; padding: 0.35rem 0.9rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 500;
+  }
+  .hero-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 880px; margin: 0 auto; padding: 0 1.5rem; }
+  .section { padding: 3rem 0; border-bottom: 1px solid var(--border); }
+  .section:last-child { border-bottom: none; }
+  .section-title {
+    font-family: 'Caveat', cursive; font-size: 2rem; font-weight: 700;
+    margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .section-subtitle { color: var(--muted); font-size: 0.95rem; margin-top: -1rem; margin-bottom: 1.5rem; }
+
+  /* ── MODEL TABLE ── */
+  .model-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem;
+  }
+  .model-card {
+    border: 2.5px solid var(--ink); border-radius: 14px; padding: 1.2rem;
+    background: white; box-shadow: 4px 4px 0 var(--ink); transition: transform 0.15s;
+    position: relative;
+  }
+  .model-card:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+  .model-card .size-badge {
+    position: absolute; top: 0.75rem; right: 0.75rem;
+    background: var(--ink); color: white; font-size: 0.72rem; font-weight: 700;
+    padding: 0.15rem 0.55rem; border-radius: 999px;
+  }
+  .model-card h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 500; margin-bottom: 0.3rem; }
+  .model-card .desc { font-size: 0.88rem; color: #444; margin-bottom: 0.6rem; }
+  .model-card .tags { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .tag {
+    font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.5rem;
+    border-radius: 6px; border: 1.5px solid;
+  }
+  .tag-vision { color: #7c3aed; border-color: #7c3aed; background: #ede9fe; }
+  .tag-text   { color: #0369a1; border-color: #0369a1; background: #dbeafe; }
+  .tag-cloud  { color: #059669; border-color: #059669; background: #dcfce7; }
+  .tag-local  { color: #b45309; border-color: #b45309; background: #fef3c7; }
+
+  /* ── BLOCK CARDS ── */
+  .blocks { display: flex; flex-direction: column; gap: 2rem; }
+  .block-card {
+    border: 2.5px solid var(--ink); border-radius: 18px; overflow: hidden;
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+  .block-header {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.1rem 1.5rem; border-bottom: 2px solid var(--ink);
+  }
+  .block-icon { font-size: 2rem; flex-shrink: 0; }
+  .block-header-text h3 { font-family: 'Caveat', cursive; font-size: 1.6rem; font-weight: 700; }
+  .block-header-text p { font-size: 0.88rem; color: #444; margin-top: 0.1rem; }
+  .block-body { padding: 1.5rem; }
+  .block-body p { margin-bottom: 0.8rem; font-size: 0.95rem; }
+  .block-body p:last-child { margin-bottom: 0; }
+  .block-body ul { padding-left: 1.4rem; margin-bottom: 0.8rem; font-size: 0.95rem; }
+  .block-body li { margin-bottom: 0.3rem; }
+
+  .block-card.group-1 .block-header { background: var(--c-yellow); }
+  .block-card.group-2 .block-header { background: var(--c-blue); }
+  .block-card.group-3 .block-header { background: var(--c-green); }
+  .block-card.group-4 .block-header { background: var(--c-orange); }
+  .block-card.group-5 .block-header { background: var(--c-teal); }
+  .block-card.group-6 .block-header { background: var(--c-pink); }
+  .block-card.group-7 .block-header { background: var(--c-purple); }
+
+  /* ── CODE SNIPPET ── */
+  pre {
+    background: var(--code-bg); color: var(--code-fg);
+    border-radius: 10px; padding: 1.1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem; line-height: 1.6; overflow-x: auto; margin: 1rem 0;
+    border: 1.5px solid #333;
+  }
+  .hl-comment { color: #6a9955; }
+  .hl-kw      { color: #c792ea; }
+  .hl-str     { color: #c3e88d; }
+  .hl-fn      { color: #82aaff; }
+  .hl-num     { color: #f78c6c; }
+  .hl-var     { color: #f07178; }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-radius: 12px; padding: 1rem 1.2rem; margin: 1rem 0;
+    display: flex; gap: 0.75rem; align-items: flex-start;
+    font-size: 0.92rem; border: 2px solid;
+  }
+  .callout-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 0.05rem; }
+  .callout.tip   { background: var(--c-green);  border-color: #059669; }
+  .callout.warn  { background: var(--c-yellow); border-color: #d97706; }
+  .callout.info  { background: var(--c-blue);   border-color: #0284c7; }
+
+  /* ── COMPARISON TABLE ── */
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th { background: var(--ink); color: white; padding: 0.6rem 0.9rem; text-align: left; }
+  td { padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--border); }
+  tr:nth-child(even) td { background: #f8f7f4; }
+
+  /* ── FLOW DIAGRAM ── */
+  .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 1.2rem 0; }
+  .flow-step {
+    background: white; border: 2.5px solid var(--ink); border-radius: 10px;
+    padding: 0.5rem 0.9rem; font-size: 0.88rem; font-weight: 600;
+    font-family: 'Caveat', cursive; font-size: 1.1rem;
+  }
+  .flow-arrow { padding: 0 0.4rem; color: var(--muted); font-size: 1.3rem; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center; padding: 2.5rem 1rem;
+    font-family: 'Caveat', cursive; font-size: 1.1rem; color: var(--muted);
+    border-top: 2px dashed var(--border);
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="brand">🦜 Qwen Small Playground</span>
+  <a class="btn btn-colab"
+     href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/qwen-small-playground.ipynb"
+     target="_blank">▶ Open in Colab</a>
+  <a class="btn btn-outline"
+     href="https://github.com/Copilotclaw/trainingdemo/blob/main/qwen-small-playground.ipynb"
+     target="_blank">📓 View Notebook</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-emoji">🦜</div>
+  <h1>Qwen <span>Small Models</span> Playground</h1>
+  <p class="tagline">Run 800 M–9 B parameter models in Colab — text, streaming, and vision in one notebook.</p>
+  <div class="hero-pills">
+    <span class="pill">Qwen 3.5 series</span>
+    <span class="pill">800M → 9B params</span>
+    <span class="pill">Native vision</span>
+    <span class="pill">Ollama or DashScope API</span>
+    <span class="pill">Google Colab ready</span>
+  </div>
+  <div class="hero-actions">
+    <a class="btn btn-colab"
+       href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/qwen-small-playground.ipynb"
+       target="_blank">▶ Open in Colab</a>
+    <a class="btn btn-outline"
+       href="https://github.com/Copilotclaw/trainingdemo"
+       target="_blank">GitHub Repo</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- MODEL OVERVIEW -->
+  <section class="section">
+    <h2 class="section-title">🗺️ The Model Family</h2>
+    <p class="section-subtitle">All models in the Qwen 3.5 Small series — pick based on your hardware and needs.</p>
+
+    <div class="model-grid">
+      <div class="model-card">
+        <span class="size-badge">800 M</span>
+        <h3>qwen3.5:0.8b</h3>
+        <p class="desc">Ultra-compact — runs on a Raspberry Pi or phone.</p>
+        <div class="tags">
+          <span class="tag tag-text">Text</span>
+          <span class="tag tag-vision">Vision</span>
+          <span class="tag tag-local">Ollama</span>
+        </div>
+      </div>
+      <div class="model-card">
+        <span class="size-badge">1.5 B</span>
+        <h3>qwen3.5:1.5b</h3>
+        <p class="desc">Mobile-grade — always-on assistants, low-power devices.</p>
+        <div class="tags">
+          <span class="tag tag-text">Text</span>
+          <span class="tag tag-vision">Vision</span>
+          <span class="tag tag-local">Ollama</span>
+        </div>
+      </div>
+      <div class="model-card">
+        <span class="size-badge">3 B</span>
+        <h3>qwen3.5:3b</h3>
+        <p class="desc">Desktop sweet-spot — great quality, offline, fast.</p>
+        <div class="tags">
+          <span class="tag tag-text">Text</span>
+          <span class="tag tag-vision">Vision</span>
+          <span class="tag tag-local">Ollama</span>
+        </div>
+      </div>
+      <div class="model-card">
+        <span class="size-badge">7 B</span>
+        <h3>qwen3.5:7b</h3>
+        <p class="desc">High-quality local inference on a modern laptop GPU.</p>
+        <div class="tags">
+          <span class="tag tag-text">Text</span>
+          <span class="tag tag-vision">Vision</span>
+          <span class="tag tag-local">Ollama</span>
+        </div>
+      </div>
+      <div class="model-card">
+        <span class="size-badge">9 B</span>
+        <h3>qwen3.5:9b</h3>
+        <p class="desc">Best-in-class small model — rivals much larger systems.</p>
+        <div class="tags">
+          <span class="tag tag-text">Text</span>
+          <span class="tag tag-vision">Vision</span>
+          <span class="tag tag-local">Ollama</span>
+        </div>
+      </div>
+      <div class="model-card">
+        <span class="size-badge">Cloud</span>
+        <h3>qwen3.5-plus</h3>
+        <p class="desc">DashScope API — no GPU needed, fast, vision-capable.</p>
+        <div class="tags">
+          <span class="tag tag-text">Text</span>
+          <span class="tag tag-vision">Vision</span>
+          <span class="tag tag-cloud">DashScope</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout info" style="margin-top:1.5rem;">
+      <span class="callout-icon">💡</span>
+      <div><strong>Vision is not bolted on.</strong> Unlike older multimodal models, Qwen 3.5 handles text and images through the same unified architecture — no separate vision tower, no preprocessing pipeline. You send an image and ask a question. That's it.</div>
+    </div>
+  </section>
+
+  <!-- NOTEBOOK WALKTHROUGH -->
+  <section class="section">
+    <h2 class="section-title">📓 Notebook Walkthrough</h2>
+    <p class="section-subtitle">What each group of cells does — and why.</p>
+
+    <div class="blocks">
+
+      <!-- GROUP 1: SETUP -->
+      <div class="block-card group-1">
+        <div class="block-header">
+          <span class="block-icon">🛠️</span>
+          <div class="block-header-text">
+            <h3>Group 1 — Setup</h3>
+            <p>Install Python packages and pick your backend</p>
+          </div>
+        </div>
+        <div class="block-body">
+          <p>The first two cells handle everything you need before running any AI code:</p>
+          <ul>
+            <li><strong>Dependencies</strong> — installs <code>openai</code> (the API client), <code>Pillow</code> (image handling), and <code>requests</code> silently.</li>
+            <li><strong>Backend config</strong> — set <code>BACKEND = "ollama"</code> for fully local inference (no data leaves your machine) or <code>"dashscope"</code> for the cloud API (no GPU needed).</li>
+            <li><strong>Model selection</strong> — choose your Qwen 3.5 size here. Smaller = faster; larger = smarter.</li>
+          </ul>
+          <pre><code><span class="hl-comment"># Two options — pick one:</span>
+<span class="hl-var">BACKEND</span>      = <span class="hl-str">"ollama"</span>         <span class="hl-comment"># local, private, free</span>
+<span class="hl-var">BACKEND</span>      = <span class="hl-str">"dashscope"</span>      <span class="hl-comment"># cloud, no GPU needed</span>
+<span class="hl-var">OLLAMA_MODEL</span> = <span class="hl-str">"qwen3.5:1.5b"</span>  <span class="hl-comment"># change size here</span></code></pre>
+          <div class="callout tip">
+            <span class="callout-icon">✅</span>
+            <div>Free Colab tier? Use <code>"dashscope"</code> — you don't need a GPU. Get a free API key at <a href="https://dashscope.aliyuncs.com" target="_blank">dashscope.aliyuncs.com</a>.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GROUP 2: CLIENT -->
+      <div class="block-card group-2">
+        <div class="block-header">
+          <span class="block-icon">⚙️</span>
+          <div class="block-header-text">
+            <h3>Group 2 — Client &amp; Ollama Setup</h3>
+            <p>Start the server (if local) and wire up the API client</p>
+          </div>
+        </div>
+        <div class="block-body">
+          <p>This group does two things depending on your backend:</p>
+          <ul>
+            <li><strong>Ollama path</strong> — installs Ollama on Colab if missing, starts the server process in the background, and pulls the model you chose (only downloads once).</li>
+            <li><strong>DashScope path</strong> — nothing to install, just skips to client creation.</li>
+          </ul>
+          <p>Both backends then create the same <code>OpenAI</code> client object pointing at the right URL — so all subsequent code works identically regardless of backend.</p>
+          <div class="flow">
+            <span class="flow-step">Config</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-step">Start server</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-step">Pull model</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-step">OpenAI client</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-step">chat() helper</span>
+          </div>
+          <p>The <code>chat()</code> helper wraps the API call into a single line — pass a prompt, get a string back. Used by every demo cell below.</p>
+        </div>
+      </div>
+
+      <!-- GROUP 3: TEXT CHAT -->
+      <div class="block-card group-3">
+        <div class="block-header">
+          <span class="block-icon">💬</span>
+          <div class="block-header-text">
+            <h3>Group 3 — Text Chat Playground</h3>
+            <p>Talk to your model — change the prompt to anything</p>
+          </div>
+        </div>
+        <div class="block-body">
+          <p>Two hands-on cells designed to be edited and re-run:</p>
+          <ul>
+            <li><strong>Simple prompt</strong> — change <code>MY_PROMPT</code> to any question. The model answers and prints its response tagged with the model name.</li>
+            <li><strong>System role</strong> — the <em>system message</em> sets the model's persona before the conversation starts. Change <code>PERSONA</code> to give it any character: teacher, code reviewer, sarcastic chef, whatever.</li>
+          </ul>
+          <pre><code><span class="hl-comment"># Swap in your own prompt</span>
+<span class="hl-var">MY_PROMPT</span> = <span class="hl-str">"Explain quantum computing in 2 sentences."</span>
+
+<span class="hl-comment"># Or give the model a persona</span>
+<span class="hl-var">PERSONA</span>  = <span class="hl-str">"You are a pirate who explains tech."</span></code></pre>
+          <div class="callout tip">
+            <span class="callout-icon">💡</span>
+            <div>Try the same prompt on the 0.8B and the 9B model — the quality difference is visible and educational.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GROUP 4: STREAMING -->
+      <div class="block-card group-4">
+        <div class="block-header">
+          <span class="block-icon">⚡</span>
+          <div class="block-header-text">
+            <h3>Group 4 — Streaming</h3>
+            <p>Watch tokens arrive in real-time</p>
+          </div>
+        </div>
+        <div class="block-body">
+          <p>Instead of waiting for the full response, streaming mode sends each token (word fragment) as it's generated. This is how ChatGPT and Claude display responses while they think.</p>
+          <p>The cell uses <code>stream=True</code> and loops over <code>chunk.choices[0].delta.content</code>, printing each fragment immediately with <code>flush=True</code>.</p>
+          <pre><code><span class="hl-var">stream</span> = client.chat.completions.<span class="hl-fn">create</span>(
+    model=<span class="hl-var">ACTIVE_MODEL</span>,
+    messages=[...],
+    <span class="hl-var">stream</span>=<span class="hl-kw">True</span>,
+)
+<span class="hl-kw">for</span> chunk <span class="hl-kw">in</span> stream:
+    <span class="hl-fn">print</span>(chunk.choices[<span class="hl-num">0</span>].delta.content, end=<span class="hl-str">""</span>, flush=<span class="hl-kw">True</span>)</code></pre>
+          <p>This also shows why small models feel "fast" — a 1.5B model streaming at 80 tokens/sec feels instant even if total response time is the same as a 9B model generating all at once.</p>
+        </div>
+      </div>
+
+      <!-- GROUP 5: SHOWDOWN -->
+      <div class="block-card group-5">
+        <div class="block-header">
+          <span class="block-icon">🏆</span>
+          <div class="block-header-text">
+            <h3>Group 5 — Model Showdown</h3>
+            <p>Same prompt, multiple sizes — see the difference</p>
+          </div>
+        </div>
+        <div class="block-body">
+          <p>This is the most educational cell in the notebook. It runs the <strong>same question</strong> across multiple model sizes and prints each response in sequence.</p>
+          <ul>
+            <li>Default comparison: <code>0.8b</code>, <code>1.5b</code>, <code>3b</code></li>
+            <li>Customize <code>COMPARE_MODELS</code> to include any sizes you want</li>
+            <li>Customize <code>SHOWDOWN_PROMPT</code> to test with your own task</li>
+          </ul>
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <div>Each model that isn't already pulled will be downloaded (~1–5 GB each). The first run takes time; subsequent runs are instant.</div>
+          </div>
+          <table>
+            <thead><tr><th>Observation</th><th>What it means</th></tr></thead>
+            <tbody>
+              <tr><td>0.8B gives short/vague answers</td><td>Less "knowledge" stored in weights</td></tr>
+              <tr><td>3B gives structured answers</td><td>Enough capacity for reasoning patterns</td></tr>
+              <tr><td>9B gives nuanced detail</td><td>Larger model = more facts &amp; reasoning</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GROUP 6: VISION -->
+      <div class="block-card group-6">
+        <div class="block-header">
+          <span class="block-icon">👁️</span>
+          <div class="block-header-text">
+            <h3>Group 6 — Vision Playground</h3>
+            <p>Describe images with the same model that handles text</p>
+          </div>
+        </div>
+        <div class="block-body">
+          <p>All Qwen 3.5 models are natively multimodal. The <em>vision</em> cells show two patterns:</p>
+          <ul>
+            <li><strong>Image from URL</strong> — send a public image URL directly in the message. No downloading, no base64. The model fetches and processes it.</li>
+            <li><strong>Visual Q&amp;A</strong> — a second cell with <code>MY_IMAGE_URL</code> and <code>MY_QUESTION</code> you can swap out freely. Ask anything about the image.</li>
+          </ul>
+          <p>The message structure uses a <em>content array</em> — mixing an <code>image_url</code> part and a <code>text</code> part in the same user message:</p>
+          <pre><code><span class="hl-comment"># Vision message structure</span>
+messages=[{
+    <span class="hl-str">"role"</span>: <span class="hl-str">"user"</span>,
+    <span class="hl-str">"content"</span>: [
+        {<span class="hl-str">"type"</span>: <span class="hl-str">"image_url"</span>, <span class="hl-str">"image_url"</span>: {<span class="hl-str">"url"</span>: IMAGE_URL}},
+        {<span class="hl-str">"type"</span>: <span class="hl-str">"text"</span>,      <span class="hl-str">"text"</span>: <span class="hl-str">"What's in this image?"</span>},
+    ],
+}]</code></pre>
+          <div class="callout info">
+            <span class="callout-icon">💡</span>
+            <div>This is the same OpenAI vision API format used by GPT-4o — so code that works here transfers directly to other providers.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GROUP 7: LOCAL FILE -->
+      <div class="block-card group-7">
+        <div class="block-header">
+          <span class="block-icon">📁</span>
+          <div class="block-header-text">
+            <h3>Group 7 — Vision with Local File</h3>
+            <p>Upload your own image from disk</p>
+          </div>
+        </div>
+        <div class="block-body">
+          <p>The previous vision cells use URLs. This cell shows how to send a <strong>local file</strong> — a screenshot, photo, or drawing from your machine.</p>
+          <ul>
+            <li><strong>In Colab</strong> — uses <code>google.colab.files.upload()</code> to open a file picker, then reads the bytes.</li>
+            <li><strong>Local Jupyter</strong> — reads a file by path from disk (change <code>filename = "test.jpg"</code>).</li>
+          </ul>
+          <p>Either way, the bytes get <strong>base64-encoded</strong> and embedded directly in the message as a <code>data:</code> URL — no uploading to a third-party server.</p>
+          <pre><code><span class="hl-comment"># Base64-encode the image</span>
+<span class="hl-var">b64</span>      = base64.<span class="hl-fn">b64encode</span>(image_bytes).<span class="hl-fn">decode</span>()
+<span class="hl-var">data_url</span> = <span class="hl-fn">f</span><span class="hl-str">"data:image/jpeg;base64,{b64}"</span></code></pre>
+          <div class="callout tip">
+            <span class="callout-icon">🔒</span>
+            <div>When using Ollama (local backend), the image never leaves your machine — everything runs on-device.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /blocks -->
+  </section>
+
+  <!-- BACKEND COMPARISON -->
+  <section class="section">
+    <h2 class="section-title">⚖️ Which Backend Should I Use?</h2>
+    <table>
+      <thead>
+        <tr><th>Criterion</th><th>Ollama (local)</th><th>DashScope API</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GPU required?</td><td>Yes (or slow CPU)</td><td>No</td></tr>
+        <tr><td>Privacy</td><td>100% local — nothing leaves</td><td>Data sent to Alibaba Cloud</td></tr>
+        <tr><td>Cost</td><td>Free (electricity)</td><td>Free tier + paid tiers</td></tr>
+        <tr><td>Setup time</td><td>5–15 min (download models)</td><td>~1 min (API key)</td></tr>
+        <tr><td>Speed</td><td>Depends on your hardware</td><td>Fast (datacenter)</td></tr>
+        <tr><td>Model sizes</td><td>0.8B → 9B, your choice</td><td>Cloud-optimised (qwen3.5-plus)</td></tr>
+        <tr><td>Best for</td><td>Learning, privacy, production</td><td>Quick experiments, no GPU</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- TIPS -->
+  <section class="section">
+    <h2 class="section-title">🧪 Things to Try</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;">
+      <div style="border:2px solid var(--ink);border-radius:12px;padding:1.2rem;background:var(--c-yellow);box-shadow:3px 3px 0 var(--ink);">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem;">📏</div>
+        <strong>Size vs Quality</strong>
+        <p style="font-size:0.88rem;margin-top:0.3rem;">Run the showdown with a coding task. Watch where 0.8B starts making mistakes that 3B doesn't.</p>
+      </div>
+      <div style="border:2px solid var(--ink);border-radius:12px;padding:1.2rem;background:var(--c-green);box-shadow:3px 3px 0 var(--ink);">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem;">🌍</div>
+        <strong>Multilingual</strong>
+        <p style="font-size:0.88rem;margin-top:0.3rem;">Qwen 3.5 is strong in Chinese. Try prompting in another language and compare quality across sizes.</p>
+      </div>
+      <div style="border:2px solid var(--ink);border-radius:12px;padding:1.2rem;background:var(--c-blue);box-shadow:3px 3px 0 var(--ink);">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem;">👁️</div>
+        <strong>Vision stress test</strong>
+        <p style="font-size:0.88rem;margin-top:0.3rem;">Send a complex diagram or screenshot. Ask the model to explain what it shows. Try different sizes.</p>
+      </div>
+      <div style="border:2px solid var(--ink);border-radius:12px;padding:1.2rem;background:var(--c-pink);box-shadow:3px 3px 0 var(--ink);">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem;">⚡</div>
+        <strong>Speed benchmark</strong>
+        <p style="font-size:0.88rem;margin-top:0.3rem;">Time each model with <code>time.time()</code>. Plot tokens/sec vs parameter count — the curve is non-linear.</p>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /container -->
+
+<footer>
+  🦃 Created by <a href="https://github.com/Copilotclaw" target="_blank">Crunch</a> ·
+  <a href="https://github.com/Copilotclaw/trainingdemo" target="_blank">trainingdemo repo</a> ·
+  Powered by <a href="https://qwenlm.github.io/" target="_blank">Qwen 3.5</a>
+</footer>
+
+</body>
+</html>
