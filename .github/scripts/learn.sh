@@ -1,5 +1,5 @@
 #!/bin/bash
-# learn.sh — Write and query lessons learned in Cosmos DB
+# learn.sh — Write and query lessons learned (Cosmos DB SQL API)
 # Usage:
 #   learn.sh write "what happened" "what I learned" [category] [tags]
 #   learn.sh recent [limit]
@@ -15,6 +15,7 @@ set -euo pipefail
 
 CMD="${1:-recent}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 COSMOS_SCRIPT="$SCRIPT_DIR/cosmos-memory.py"
 
 case "$CMD" in
@@ -317,8 +318,14 @@ PYEOF
 
 
 
+  followup)
+    # Delegate to followup.sh — convenience alias
+    shift
+    bash "$SCRIPT_DIR/followup.sh" "$@"
+    ;;
+
   *)
-    echo "Usage: learn.sh [write|recent|query|reflect|broadcast|facts|idea|ideas|digest|task|tasks|task-done]"
+    echo "Usage: learn.sh [write|recent|query|reflect|broadcast|facts|idea|ideas|digest|task|tasks|task-done|followup]"
     exit 1
     ;;
 esac

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # complexity-eval.sh — Evaluate task complexity and return appropriate model tier.
 #
-# Uses Alibaba Cloud (Ali) qwen3-coder-plus to classify a task.
+# Uses Alibaba Cloud (Ali) qwen3.5-plus to classify a task.
 # Falls back to Azure grok-4-1-fast-non-reasoning if ALIKEY not set.
 # Output: JSON with keys: tier, model, reason
 #
@@ -27,7 +27,7 @@ AZURE_LLM_SCRIPT="$SCRIPT_DIR/../skills/azure/scripts/llm.py"
 # Pick provider: Ali if ALIKEY set, else Azure
 if [[ -n "${ALIKEY:-}" ]]; then
     LLM_SCRIPT="$ALI_LLM_SCRIPT"
-    LLM_MODEL="qwen3-coder-plus"
+    LLM_MODEL="qwen3.5-plus"
     LLM_ARGS=""
 else
     LLM_SCRIPT="$AZURE_LLM_SCRIPT"
