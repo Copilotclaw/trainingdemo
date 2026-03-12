@@ -165,19 +165,27 @@ jobs:
             MSG_REF="*(message too large for inline — read full content from \`${MSG_FILE}\`)*"
           fi
 
-          # Build prompt with summary context if available
+          # Fetch latest 5 comments for context window
+          LATEST_COMMENTS=$(gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" \
+            --jq '[.[-5:][].body] | to_entries | map("**Comment " + (.key+1|tostring) + ":**\n" + .value) | join("\n\n---\n\n")' 2>/dev/null || echo "_(no previous comments)_")
+
+          # Build prompt: header + summary + latest 5 comments + new message + full thread pointer
           if [ -f "$SUMMARY_FILE" ]; then
             SUMMARY_CONTENT=$(cat "$SUMMARY_FILE")
-            PROMPT=$(printf '## trainingdemo Issue #%s: %s\n\nYou are Crunch 🦃 working in the **trainingdemo** repo. Create files, notebooks, and all output directly in this repo (current working directory is trainingdemo root).\n\n**Context summary** (state/issues/%s.sum.md):\n\n%s\n\n---\n\n**New message:**\n\n%s\n\n---\n\nFull thread: state/issues/%s.full.md' \
+            PROMPT=$(printf '## trainingdemo Issue #%s: %s\n\nYou are Crunch 🦃 working in the **trainingdemo** repo. Create files, notebooks, and all output directly in this repo (current working directory is trainingdemo root).\n\n**Context summary** (state/issues/%s.sum.md):\n\n%s\n\n---\n\n**Recent comments (last 5):**\n\n%s\n\n---\n\n**New message:**\n\n%s\n\n---\n\nFull thread: state/issues/%s.full.md\n🔗 Issue URL: https://github.com/%s/issues/%s' \
               "$ISSUE_NUMBER" "$TITLE" \
               "$ISSUE_NUMBER" "$SUMMARY_CONTENT" \
+              "$LATEST_COMMENTS" \
               "$MSG_REF" \
-              "$ISSUE_NUMBER")
+              "$ISSUE_NUMBER" \
+              "$GITHUB_REPOSITORY" "$ISSUE_NUMBER")
           else
-            PROMPT=$(printf '## trainingdemo Issue #%s: %s\n\nYou are Crunch 🦃 working in the **trainingdemo** repo (see AGENTS.md for your full identity). Create files, notebooks, and all output directly in this repo — the current working directory IS trainingdemo root.\n\n**New message:**\n\n%s\n\n---\n\nFull thread: state/issues/%s.full.md' \
+            PROMPT=$(printf '## trainingdemo Issue #%s: %s\n\nYou are Crunch 🦃 working in the **trainingdemo** repo (see AGENTS.md for your full identity). Create files, notebooks, and all output directly in this repo — the current working directory IS trainingdemo root.\n\n**Recent comments (last 5):**\n\n%s\n\n---\n\n**New message:**\n\n%s\n\n---\n\nFull thread: state/issues/%s.full.md\n🔗 Issue URL: https://github.com/%s/issues/%s' \
               "$ISSUE_NUMBER" "$TITLE" \
+              "$LATEST_COMMENTS" \
               "$MSG_REF" \
-              "$ISSUE_NUMBER")
+              "$ISSUE_NUMBER" \
+              "$GITHUB_REPOSITORY" "$ISSUE_NUMBER")
           fi
 
           # Run agent
@@ -270,7 +278,7 @@ jobs:
                 "$ISSUE_NUMBER" "$TITLE" "$EXISTING_SUM" "$NEW_INPUT" "$AGENT_TEXT")
               ALI_STDERR_LOG=$(mktemp)
               NEW_ENTRY=$(python .github/skills/ali/scripts/pi-llm.py \
-                --model qwen3-coder-plus \
+                --model qwen3.5-plus \
                 --system "$SUMMARY_SYSTEM" \
                 --prompt "$SUMMARY_PROMPT" 2>"$ALI_STDERR_LOG") || true
               [ -s "$ALI_STDERR_LOG" ] && cat "$ALI_STDERR_LOG"
