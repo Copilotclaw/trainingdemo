@@ -11,10 +11,10 @@ A public repo of AI/ML training notebooks managed by **Crunch** (Copilotclaw's A
 
 | Notebook | Topic | Open | Explainer |
 |----------|-------|------|-----------|
-| [human-rag-exercise.ipynb](human-rag-exercise.ipynb) | **Human RAG** — understand retrieval by doing it on paper first | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/human-rag-exercise.ipynb) | *(start here!)* |
-| [simple-rag-demo.ipynb](simple-rag-demo.ipynb) | RAG with FAISS + SentenceTransformers | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo.ipynb) | [![View Explainer](https://img.shields.io/badge/📖_Explainer-View-7c3aed?style=flat-square&logo=html5&logoColor=white)](https://htmlpreview.github.io/?https://github.com/Copilotclaw/trainingdemo/blob/main/explainer.html) |
-| [simple-rag-demo-ollama.ipynb](simple-rag-demo-ollama.ipynb) | 🦙 **Local RAG with Ollama** — same pipeline but with real LLM generation, fully offline | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo-ollama.ipynb) | *requires Ollama* |
-| [qwen35-tiny-rag-demo.ipynb](qwen35-tiny-rag-demo.ipynb) | 👁️ **Qwen 3.5 Tiny + Vision RAG** — 0.8B–9B models with native image understanding, fully offline or via DashScope API | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/qwen35-tiny-rag-demo.ipynb) | *Ollama or ALIKEY* |
+| [human-rag-exercise.ipynb](human-rag-exercise.ipynb) | **Human RAG** — understand retrieval by doing it on paper first | <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/human-rag-exercise.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a> | *(start here!)* |
+| [simple-rag-demo.ipynb](simple-rag-demo.ipynb) | RAG with FAISS + SentenceTransformers | <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a> | <a href="https://htmlpreview.github.io/?https://github.com/Copilotclaw/trainingdemo/blob/main/explainer.html" target="_blank"><img src="https://img.shields.io/badge/📖_Explainer-View-7c3aed?style=flat-square&logo=html5&logoColor=white" alt="View Explainer"/></a> |
+| [simple-rag-demo-ollama.ipynb](simple-rag-demo-ollama.ipynb) | 🦙 **Local RAG with Ollama** — same pipeline but with real LLM generation, fully offline | <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/simple-rag-demo-ollama.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a> | *requires Ollama* |
+| [qwen35-tiny-rag-demo.ipynb](qwen35-tiny-rag-demo.ipynb) | 👁️ **Qwen 3.5 Tiny + Vision RAG** — 0.8B–9B models with native image understanding, fully offline or via DashScope API | <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/qwen35-tiny-rag-demo.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a> | *Ollama or ALIKEY* |
 
 ---
 
@@ -56,8 +56,8 @@ Kein API-Key, kein lokales Setup — läuft in **Google Colab**.
 
 | Session | Titel | Notebook | Colab |
 |---------|-------|----------|-------|
-| 1 | Grundlagen von RAG + PIRAGE-Framework | [01_grundlagen_rag.ipynb](kurs/session_01_grundlagen/01_grundlagen_rag.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/kurs/session_01_grundlagen/01_grundlagen_rag.ipynb) |
-| 2+3 | Naive RAG — Einrichtung & Chunking | [02_naive_rag.ipynb](kurs/session_02_naive_rag/02_naive_rag.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/kurs/session_02_naive_rag/02_naive_rag.ipynb) |
+| 1 | Grundlagen von RAG + PIRAGE-Framework | [01_grundlagen_rag.ipynb](kurs/session_01_grundlagen/01_grundlagen_rag.ipynb) | <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/kurs/session_01_grundlagen/01_grundlagen_rag.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a> |
+| 2+3 | Naive RAG — Einrichtung & Chunking | [02_naive_rag.ipynb](kurs/session_02_naive_rag/02_naive_rag.ipynb) | <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/kurs/session_02_naive_rag/02_naive_rag.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a> |
 | 4–12 | Hybrid RAG, GraphRAG, Agentic RAG… | *(coming soon)* | — |
 
 → [Vollständige Kursübersicht](kurs/README.md)
