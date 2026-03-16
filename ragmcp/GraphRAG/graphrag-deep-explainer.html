@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧠 GraphRAG Deep Explainer — Historical Demo</title>
+<style>
+  :root {
+    --blue-light: #e3f2fd;
+    --blue-border: #1976d2;
+    --green-light: #e8f5e9;
+    --green-border: #388e3c;
+    --orange-light: #fff8e1;
+    --orange-border: #f57c00;
+    --red-light: #fce4ec;
+    --red-border: #c62828;
+    --purple-light: #f3e5f5;
+    --purple-border: #7b1fa2;
+    --gray-light: #f5f5f5;
+    --gray-border: #9e9e9e;
+    --dark-bg: #1e1e1e;
+    --code-text: #d4d4d4;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    line-height: 1.7;
+    color: #2c3e50;
+    background: #f0f4f8;
+    margin: 0;
+    padding: 20px;
+  }
+
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
+
+  .page-header {
+    background: linear-gradient(135deg, #1a237e 0%, #0d47a1 50%, #01579b 100%);
+    color: white;
+    padding: 50px 50px 40px;
+  }
+
+  .page-header h1 { margin: 0 0 10px; font-size: 2.2em; letter-spacing: -0.5px; }
+  .page-header p { margin: 0; opacity: 0.85; font-size: 1.1em; }
+
+  .toc {
+    background: #fafafa;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 20px 50px;
+  }
+
+  .toc h3 { margin: 0 0 10px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+
+  .toc ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+  .toc ul li a {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #e3f2fd;
+    color: #1565c0;
+    border-radius: 20px;
+    font-size: 0.85em;
+    text-decoration: none;
+    border: 1px solid #bbdefb;
+    transition: background 0.2s;
+  }
+  .toc ul li a:hover { background: #bbdefb; }
+
+  .content { padding: 40px 50px; }
+
+  h2 {
+    font-size: 1.6em;
+    margin: 2.5em 0 0.8em;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e0e0e0;
+    color: #1a237e;
+  }
+
+  h2:first-child { margin-top: 0; }
+
+  h3 {
+    font-size: 1.15em;
+    color: #0d47a1;
+    margin: 1.8em 0 0.5em;
+    padding-left: 12px;
+    border-left: 4px solid #1976d2;
+  }
+
+  h4 {
+    font-size: 1em;
+    color: #37474f;
+    margin: 1.2em 0 0.3em;
+    font-weight: 600;
+  }
+
+  p { margin: 0.7em 0; }
+
+  code {
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
+    background: #f0f4f8;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: #c0392b;
+  }
+
+  .code-block {
+    background: var(--dark-bg);
+    color: var(--code-text);
+    padding: 20px;
+    border-radius: 8px;
+    font-family: "Consolas", "Monaco", monospace;
+    font-size: 0.88em;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 12px 0;
+    white-space: pre;
+  }
+
+  .code-block .comment { color: #6a9955; }
+  .code-block .keyword { color: #569cd6; }
+  .code-block .string { color: #ce9178; }
+  .code-block .number { color: #b5cea8; }
+  .code-block .func { color: #dcdcaa; }
+
+  .output-box {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-left: 4px solid #6c757d;
+    padding: 15px 18px;
+    border-radius: 4px;
+    font-family: "Consolas", monospace;
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    color: #495057;
+    margin: 10px 0;
+  }
+
+  .box {
+    padding: 18px 22px;
+    border-radius: 8px;
+    margin: 16px 0;
+    border-left: 5px solid;
+  }
+
+  .box.concept  { background: var(--blue-light);   border-color: var(--blue-border); }
+  .box.insight  { background: var(--green-light);  border-color: var(--green-border); }
+  .box.warning  { background: var(--orange-light); border-color: var(--orange-border); }
+  .box.danger   { background: var(--red-light);    border-color: var(--red-border); }
+  .box.tip      { background: var(--purple-light); border-color: var(--purple-border); }
+  .box.gray     { background: var(--gray-light);   border-color: var(--gray-border); }
+
+  .box strong:first-child { display: block; margin-bottom: 6px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .pipeline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin: 20px 0;
+  }
+
+  .pipe-step {
+    width: 100%;
+    max-width: 620px;
+    background: white;
+    border: 2px solid #1976d2;
+    border-radius: 8px;
+    padding: 14px 22px;
+    text-align: center;
+    position: relative;
+  }
+
+  .pipe-step .step-num {
+    display: inline-block;
+    background: #1976d2;
+    color: white;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-size: 0.8em;
+    font-weight: bold;
+    line-height: 26px;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+
+  .pipe-step .step-title { font-weight: 600; color: #1a237e; }
+  .pipe-step .step-desc { font-size: 0.85em; color: #546e7a; margin-top: 4px; }
+
+  .pipe-arrow {
+    font-size: 1.4em;
+    color: #90caf9;
+  }
+
+  .cell-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin: 18px 0;
+    overflow: hidden;
+  }
+
+  .cell-header {
+    background: #37474f;
+    color: white;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.88em;
+  }
+
+  .cell-header .cell-num {
+    background: #546e7a;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+
+  .cell-header .cell-type {
+    opacity: 0.7;
+    font-size: 0.9em;
+  }
+
+  .cell-body { padding: 18px 22px; }
+
+  .triple-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 0.9em;
+  }
+
+  .triple-table th {
+    background: #1976d2;
+    color: white;
+    padding: 8px 14px;
+    text-align: left;
+  }
+
+  .triple-table td {
+    padding: 8px 14px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .triple-table tr:nth-child(even) td { background: #f5f5f5; }
+  .triple-table tr.bad td { background: #fff3e0; color: #bf360c; }
+  .triple-table tr.good td { background: #e8f5e9; color: #1b5e20; }
+
+  .node-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 12px 0;
+  }
+
+  .node-tag {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.82em;
+    font-family: monospace;
+  }
+
+  .node-tag.good { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+  .node-tag.bad  { background: #fce4ec; color: #b71c1c; border: 1px solid #ef9a9a; }
+  .node-tag.ugly { background: #fff8e1; color: #e65100; border: 1px solid #ffcc80; }
+
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 0.88em;
+  }
+
+  .compare-table th { padding: 10px 14px; text-align: left; }
+  .compare-table td { padding: 9px 14px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+  .compare-table .col-bad { background: #fce4ec; }
+  .compare-table .col-good { background: #e8f5e9; }
+
+  .glossary-item {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 0;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 14px 0;
+  }
+
+  .glossary-item:last-child { border-bottom: none; }
+
+  .glossary-term {
+    font-weight: 700;
+    color: #1a237e;
+    padding-right: 20px;
+  }
+
+  hr.section-break {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 40px 0 30px;
+  }
+
+  .page-footer {
+    background: #f5f5f5;
+    border-top: 1px solid #e0e0e0;
+    padding: 20px 50px;
+    font-size: 0.82em;
+    color: #9e9e9e;
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    .content { padding: 24px 20px; }
+    .page-header { padding: 30px 20px; }
+    .toc { padding: 15px 20px; }
+    .glossary-item { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ── HEADER ─────────────────────────────────────────── -->
+  <div class="page-header">
+    <h1>🧠 GraphRAG Deep Explainer</h1>
+    <p>Historical Demo · Local LLM (Ollama + qwen2:0.5b) · Knowledge Graph · RAG Pipeline</p>
+  </div>
+
+  <!-- ── TABLE OF CONTENTS ──────────────────────────────── -->
+  <div class="toc">
+    <h3>Jump to section</h3>
+    <ul>
+      <li><a href="#what-is-graphrag">What is GraphRAG?</a></li>
+      <li><a href="#pipeline">The Pipeline</a></li>
+      <li><a href="#setup">Setup Cells</a></li>
+      <li><a href="#data">Data & Chunking</a></li>
+      <li><a href="#extraction">Entity Extraction</a></li>
+      <li><a href="#graph-build">Building the Graph</a></li>
+      <li><a href="#search">Search Logic</a></li>
+      <li><a href="#anchor">Anchor Detection</a></li>
+      <li><a href="#visualize">Visualization</a></li>
+      <li><a href="#qa">Q&amp;A Pipeline</a></li>
+      <li><a href="#run">The Full Run</a></li>
+      <li><a href="#why-weird">Why It Looks Weird</a></li>
+      <li><a href="#perfect-run">Perfect Run</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ul>
+  </div>
+
+  <!-- ── CONTENT ────────────────────────────────────────── -->
+  <div class="content">
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="what-is-graphrag">🧠 1. What is GraphRAG?</h2>
+
+    <p>Before diving into the notebook, let's understand the concept — because it's actually quite clever.</p>
+
+    <div class="box concept">
+      <strong>🔵 Key Concept: Plain RAG vs GraphRAG</strong>
+      <p>Standard <strong>RAG (Retrieval Augmented Generation)</strong> works like a smart search engine: you ask a question, it finds the most similar text chunks, and hands them to an LLM to summarize. Simple but shallow.</p>
+      <p><strong>GraphRAG</strong> goes deeper. Instead of just finding similar text, it first <em>builds a map of knowledge</em> — who is connected to whom, what causes what, who did what. Then when you ask a question, it navigates that map to pull the <em>relevant relationships</em>, not just random matching sentences.</p>
+    </div>
+
+    <h4>A concrete example:</h4>
+    <p>Imagine you ask: <em>"How did Einstein's work connect to the atomic bomb?"</em></p>
+    <ul>
+      <li><strong>Plain RAG</strong> might find: a sentence about Einstein, a sentence about the bomb. Maybe. Depends on keyword overlap.</li>
+      <li><strong>GraphRAG</strong> finds: Einstein → <em>influenced</em> → Quantum Mechanics → <em>used by</em> → Manhattan Project → <em>produced</em> → Atomic Bomb. It traces the <em>chain</em>.</li>
+    </ul>
+
+    <div class="box insight">
+      <strong>💡 Why graphs?</strong>
+      <p>Graphs are how humans actually store knowledge in their heads. "Who was at the party?" isn't a keyword problem — it's a network traversal. Graphs let computers reason the same way.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="pipeline">🏗️ 2. The Full Pipeline</h2>
+
+    <p>The notebook implements a complete GraphRAG pipeline from raw text to answered question. Here's how data flows through it:</p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <span class="step-num">1</span>
+        <span class="step-title">Raw Text (Historical facts)</span>
+        <div class="step-desc">11 sentences about Einstein, Curie, Newton, etc. → split into Document chunks</div>
+      </div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step">
+        <span class="step-num">2</span>
+        <span class="step-title">LLM-based Entity Extraction</span>
+        <div class="step-desc">qwen2:0.5b reads each chunk → outputs (Subject, Predicate, Object) triples</div>
+      </div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step">
+        <span class="step-num">3</span>
+        <span class="step-title">Graph Construction (NetworkX)</span>
+        <div class="step-desc">Each triple becomes: Node(Subject) → Edge(Predicate) → Node(Object) in a directed multigraph</div>
+      </div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step">
+        <span class="step-num">4</span>
+        <span class="step-title">Question → Anchor Entity</span>
+        <div class="step-desc">User asks a question → word-overlap scoring finds the best matching graph node</div>
+      </div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step">
+        <span class="step-num">5</span>
+        <span class="step-title">Subgraph Retrieval (BFS)</span>
+        <div class="step-desc">BFS from anchor node, depth=2 → collects all nearby nodes and their connections</div>
+      </div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step">
+        <span class="step-num">6</span>
+        <span class="step-title">LLM Answer Synthesis</span>
+        <div class="step-desc">Subgraph edges formatted as context → LLM answers question using those facts</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="setup">🚀 3. Setup Cells (Cells 3–8)</h2>
+
+    <h3>Cell 3 — Installing Ollama</h3>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [3]</span>
+        <span class="cell-type">code · setup · ~2 minutes</span>
+      </div>
+      <div class="cell-body">
+<div class="code-block"><span class="comment"># Install zstd (required by Ollama's .tar.zst installer)</span>
+!apt-get install -y zstd > /dev/null 2>&1
+
+<span class="comment"># Download and run the Ollama installer script</span>
+!curl -fsSL https://ollama.com/install.sh | sh
+
+<span class="comment"># Start the Ollama server in the background (port 11434)</span>
+subprocess.Popen(['ollama', 'serve'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+time.sleep(3)  <span class="comment"># wait for server to be ready</span>
+
+<span class="comment"># Download the small LLM model (~350MB)</span>
+!ollama pull qwen2:0.5b</div>
+
+        <div class="box concept">
+          <strong>🔵 What is Ollama?</strong>
+          <p>Ollama is like a "local model server" — it runs AI models on your own machine (or Colab VM) without sending anything to the cloud. Think of it as running your own private ChatGPT, completely offline.</p>
+          <p>It listens on <code>http://localhost:11434</code> — an HTTP server that accepts AI chat requests. The <code>ollama serve</code> command starts that server.</p>
+        </div>
+
+        <div class="box concept">
+          <strong>🔵 What is qwen2:0.5b?</strong>
+          <p><code>qwen2</code> is a model family from Alibaba Cloud. The <code>0.5b</code> means 0.5 <em>billion parameters</em> — that's the "size" of the model. For reference:</p>
+          <ul>
+            <li>qwen2:0.5b → ~350MB on disk. Runs on CPU. Fast but limited reasoning.</li>
+            <li>GPT-4 → estimated 1.8 <em>trillion</em> parameters. Cloud only. Expensive.</li>
+          </ul>
+          <p>Using 0.5b means the notebook runs free on Colab's CPU, but at the cost of output quality — which is why some results look messy later.</p>
+        </div>
+
+        <div class="box warning">
+          <strong>⚠️ Why zstd?</strong>
+          <p>Ollama's installer packages its binary as a <code>.tar.zst</code> file (zstandard compression). Google Colab doesn't have <code>zstd</code> installed by default, so extraction fails without it. That first line fixes that dependency before downloading anything else.</p>
+        </div>
+
+        <div class="output-box">>>> Installing ollama to /usr/local
+>>> Downloading ollama-linux-amd64.tar.zst  ████████ 100%
+>>> The Ollama API is now available at 127.0.0.1:11434.
+>>> Install complete.
+✅ Ollama ready!</div>
+      </div>
+    </div>
+
+    <h3>Cell 4 — Installing Python Libraries</h3>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [4]</span>
+        <span class="cell-type">code · no output shown</span>
+      </div>
+      <div class="cell-body">
+<div class="code-block">!pip uninstall -q -y langchain-classic 2>/dev/null || true
+
+%pip install -q langchain langchain-community langchain-ollama \
+    "langchain-core>=0.3.0,<1.0.0" "langchain-text-splitters>=0.3.0,<1.0.0" \
+    networkx pandas python-dotenv "requests==2.32.4"</div>
+
+        <p><strong>Why uninstall first?</strong> Colab often has an older version of LangChain pre-installed (<code>langchain-classic</code>) that conflicts with the modern modular packages. Removing it first prevents version clash errors.</p>
+
+        <p><strong>What each library does:</strong></p>
+        <ul>
+          <li><code>langchain</code> — the main orchestration framework. Chains together LLMs, prompts, and tools.</li>
+          <li><code>langchain-community</code> — community-contributed integrations (e.g., vector stores, loaders)</li>
+          <li><code>langchain-ollama</code> — the bridge between LangChain and your local Ollama server</li>
+          <li><code>langchain-core</code> — base abstractions: prompts, output parsers, runnables</li>
+          <li><code>langchain-text-splitters</code> — tools for chunking text into pieces</li>
+          <li><code>networkx</code> — Python's graph library. Creates, manipulates, and queries graph structures.</li>
+          <li><code>pandas</code> — tabular data. Used here lightly for data loading.</li>
+          <li><code>python-dotenv</code> — loads <code>.env</code> files into environment variables</li>
+          <li><code>requests==2.32.4</code> — HTTP library pinned to avoid conflicts</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Cell 5 — Imports</h3>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [5]</span>
+        <span class="cell-type">code · output: False</span>
+      </div>
+      <div class="cell-body">
+        <div class="output-box">False</div>
+
+        <div class="box warning">
+          <strong>⚠️ Why does it print "False"?</strong>
+          <p>The last line of cell 5 is <code>load_dotenv()</code> — which tries to find a <code>.env</code> file and load environment variables from it. When it returns <code>False</code>, it means: <em>no .env file was found</em>.</p>
+          <p><strong>This is not a problem.</strong> The notebook uses a local Ollama server — no API keys are needed. The <code>load_dotenv()</code> is there for flexibility (in case someone wants to add a cloud LLM later). For this run, it's harmless.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Cell 8 — LLM Configuration</h3>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [8]</span>
+        <span class="cell-type">code · no output</span>
+      </div>
+      <div class="cell-body">
+<div class="code-block">llm = ChatOllama(
+    model=<span class="string">"qwen2:0.5b"</span>,
+    base_url=<span class="string">"http://localhost:11434"</span>,
+    temperature=<span class="number">0.7</span>
+)</div>
+
+        <p>This creates the "LLM object" — a Python handle to your local AI model. When code later calls <code>llm.invoke("some text")</code>, it sends an HTTP request to Ollama on port 11434, gets a response, and returns it.</p>
+
+        <div class="box concept">
+          <strong>🔵 What is temperature?</strong>
+          <p>Temperature controls how "random" the model's responses are:</p>
+          <ul>
+            <li><strong>0.0</strong> — fully deterministic. Same input always gives same output. Useful for structured tasks (JSON extraction, code).</li>
+            <li><strong>0.7</strong> — balanced. Creative enough for natural language, focused enough for tasks.</li>
+            <li><strong>1.0+</strong> — very random, creative, sometimes incoherent. Good for brainstorming.</li>
+          </ul>
+          <p>For this notebook, 0.7 is reasonable but slightly too high for the extraction task in cell 14 — lower temperature (0.1–0.2) would give more consistent triple formatting.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="data">📄 4. Data Loading &amp; Chunking (Cells 9–10)</h2>
+
+    <h3>Cell 10 — Historical Text Data</h3>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [10]</span>
+        <span class="cell-type">code · no output</span>
+      </div>
+      <div class="cell-body">
+<div class="code-block">historical_texts = [
+    <span class="string">"Albert Einstein developed the theory of relativity..."</span>,
+    <span class="string">"Marie Curie discovered polonium and radium..."</span>,
+    <span class="string">"The Manhattan Project was a secret U.S. project..."</span>,
+    <span class="comment"># ... 8 more sentences</span>
+]
+
+docs = [Document(page_content=text) for text in historical_texts]
+
+splitter = RecursiveCharacterTextSplitter(chunk_size=<span class="number">500</span>, chunk_overlap=<span class="number">50</span>)
+documents = splitter.split_documents(docs)</div>
+
+        <div class="box concept">
+          <strong>🔵 What is a LangChain Document?</strong>
+          <p><code>Document(page_content=text)</code> is a simple wrapper object. It holds the text content plus optional metadata (like source file, page number). LangChain functions expect this format rather than plain strings.</p>
+        </div>
+
+        <div class="box concept">
+          <strong>🔵 What is Text Chunking?</strong>
+          <p>LLMs have a limited "context window" — they can only process a certain amount of text at once. For large documents (books, reports, wikis), you must split them into chunks first.</p>
+          <p><code>chunk_size=500</code> means each piece is at most 500 characters.</p>
+          <p><code>chunk_overlap=50</code> is the clever part: each chunk <em>overlaps by 50 characters</em> with the previous one. This prevents information loss when a sentence is cut in the middle.</p>
+          <p>Example without overlap:</p>
+          <div class="output-box">Chunk 1: "...Einstein influenced the development of quantum"
+Chunk 2: "mechanics, which was later used in the Manhattan..."
+← "quantum mechanics" is split across chunks! Context lost.</div>
+          <p>With overlap=50:</p>
+          <div class="output-box">Chunk 1: "...Einstein influenced the development of quantum"
+Chunk 2: "of quantum mechanics, which was later used..."
+← "quantum" appears in both chunks. Context preserved.</div>
+        </div>
+
+        <div class="box concept">
+          <strong>🔵 What is RecursiveCharacterTextSplitter?</strong>
+          <p>This splitter is smarter than a plain character split. It tries to split at natural boundaries in this order: <code>\n\n</code> (paragraphs) → <code>\n</code> (lines) → <code>. </code> (sentences) → <code> </code> (words) → characters. It only goes to the next level if the chunk is still too long. This keeps semantic units intact where possible.</p>
+        </div>
+
+        <p>Since the 11 sentences are each under 500 characters, chunking doesn't actually split them further here — you end up with roughly 11 documents. The splitter is included to make the notebook work for larger inputs too.</p>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="extraction">🏗️ 5. The Extraction Prompt (Cell 12)</h2>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [12]</span>
+        <span class="cell-type">code · no output (defines the extraction chain)</span>
+      </div>
+      <div class="cell-body">
+<div class="code-block">dynamic_entity_prompt = PromptTemplate.from_template(<span class="string">"""
+You are an expert in information extraction.
+
+Extract factual triples and new entities from the following text.
+
+- Return the triples as plain lines in the format: Subject, Predicate, Object
+- Do not use dashes, bullets, or numbering.
+- Return the new entities as a plain list, one per line.
+
+Text:
+{input}
+
+Known Entities:
+{known}
+
+Respond in this format exactly:
+
+Triples:
+Subject1, Predicate1, Object1
+Subject2, Predicate2, Object2
+
+New Entities:
+Entity1
+Entity2
+"""</span>)
+
+dynamic_entity_chain = dynamic_entity_prompt | llm | StrOutputParser()</div>
+
+        <div class="box concept">
+          <strong>🔵 What are Triples (Subject, Predicate, Object)?</strong>
+          <p>A <strong>triple</strong> is the fundamental building block of a knowledge graph. It represents one fact as three parts:</p>
+          <ul>
+            <li><strong>Subject</strong> — the thing the fact is about → <em>Albert Einstein</em></li>
+            <li><strong>Predicate</strong> — the relationship → <em>developed</em></li>
+            <li><strong>Object</strong> — what it's connected to → <em>Theory of Relativity</em></li>
+          </ul>
+          <p>In graph terms: Subject and Object become <strong>nodes</strong>. Predicate becomes the labeled <strong>edge</strong> (arrow) between them.</p>
+        </div>
+
+        <div class="box concept">
+          <strong>🔵 What is LangChain's pipe syntax <code>|</code>?</strong>
+          <p>LangChain uses a "chain" concept. The <code>|</code> (pipe) operator chains components together into a pipeline that runs left to right:</p>
+          <div class="output-box">prompt | llm | StrOutputParser()
+  ↑           ↑        ↑
+ Format    Send to   Extract
+ input     Ollama    text from
+ text      model     response</div>
+          <p>When you call <code>dynamic_entity_chain.invoke({"input": text, "known": entities})</code>, it: fills the template → sends to LLM → extracts the string response. This is called LCEL (LangChain Expression Language).</p>
+        </div>
+
+        <div class="box concept">
+          <strong>🔵 What is StrOutputParser?</strong>
+          <p>LLM responses come back as complex objects (with metadata, token counts, etc.). <code>StrOutputParser</code> extracts just the text content — the part you actually want to read and parse.</p>
+        </div>
+
+        <div class="box warning">
+          <strong>⚠️ The dangerous part of this prompt</strong>
+          <p>See those example placeholder names in the prompt?</p>
+          <div class="output-box">Triples:
+Subject1, Predicate1, Object1
+Subject2, Predicate2, Object2</div>
+          <p>They're there to show the <em>format</em>, not actual data. But qwen2:0.5b doesn't always understand that distinction well. Sometimes it copies those placeholder names as actual values — which is exactly what happens in Cell 14 for document 2.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="graph-build">🌐 6. Building the Knowledge Graph (Cell 14)</h2>
+
+    <p>This is the most important — and most revealing — cell in the notebook. Everything goes through the LLM here, and the quality of the output depends entirely on how well that tiny model follows instructions.</p>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [14]</span>
+        <span class="cell-type">code · long output · ~3–5 minutes</span>
+      </div>
+      <div class="cell-body">
+<div class="code-block"><span class="comment"># === CONFIG ===</span>
+REINDEX = <span class="keyword">True</span>  <span class="comment"># True = rebuild from LLM. False = load saved files.</span>
+GRAPH_PATH = <span class="string">"historical_graph.json"</span>
+ENTITIES_PATH = <span class="string">"known_entities.json"</span>
+
+<span class="comment"># NetworkX MultiDiGraph — Multiple edges allowed, directed arrows</span>
+G = nx.MultiDiGraph()
+entity_usage = defaultdict(int)
+known_entities = set()
+
+<span class="comment"># For each document chunk...</span>
+<span class="keyword">for</span> i, doc in enumerate(documents):
+    <span class="comment"># Ask LLM to extract triples from this chunk</span>
+    output = dynamic_entity_chain.invoke({<span class="string">"input"</span>: doc.page_content, <span class="string">"known"</span>: known_str})
+
+    <span class="comment"># Parse: split on "New Entities:" to separate the two sections</span>
+    sections = output.strip().split(<span class="string">"New Entities:"</span>)
+    triples_block = sections[0].replace(<span class="string">"Triples:"</span>, <span class="string">""</span>).strip()
+
+    <span class="comment"># For each triple line, split on comma → (S, P, O)</span>
+    <span class="keyword">for</span> line in triples_block.split(<span class="string">"\n"</span>):
+        parts = [p.strip() <span class="keyword">for</span> p in line.split(<span class="string">","</span>)]
+        <span class="keyword">if</span> len(parts) == 3:
+            s, r, o = parts
+            G.add_node(s)
+            G.add_node(o)
+            G.add_edge(s, o, relation=r)  <span class="comment"># Add the edge with the predicate as label</span>
+            entity_usage[s] += 1
+            entity_usage[o] += 1
+
+<span class="comment"># Save to disk for caching (REINDEX=False next time = loads instantly)</span>
+json.dump(json_graph.node_link_data(G), f)</div>
+
+        <div class="box concept">
+          <strong>🔵 What is a MultiDiGraph?</strong>
+          <p>NetworkX offers several graph types:</p>
+          <ul>
+            <li><code>Graph</code> — undirected, one edge per pair of nodes</li>
+            <li><code>DiGraph</code> — directed (arrows), one edge per direction</li>
+            <li><code>MultiDiGraph</code> — directed, <em>multiple edges allowed</em> between the same two nodes</li>
+          </ul>
+          <p>MultiDiGraph is used here because the same two entities might have several different relationships. E.g., Einstein might "developed" AND "influenced" Quantum Mechanics — two different edges between the same nodes.</p>
+        </div>
+
+        <div class="box concept">
+          <strong>🔵 What is entity_usage?</strong>
+          <p>A dictionary that counts how many times each entity appears across all extracted triples. Entities mentioned often (Einstein, Curie) get higher scores. This count is used later to prioritize which entities to include in the next extraction prompt (only the top 40 are passed as "known entities"), and as a tiebreaker in anchor detection.</p>
+        </div>
+
+        <div class="box concept">
+          <strong>🔵 What is REINDEX and the caching system?</strong>
+          <p>Building the graph requires calling the LLM for every document chunk — slow and uses compute. The cache works like this:</p>
+          <ul>
+            <li><code>REINDEX=True</code> → runs all LLM calls, rebuilds graph from scratch, saves to <code>historical_graph.json</code> and <code>known_entities.json</code></li>
+            <li><code>REINDEX=False</code> → loads saved files directly, skips all LLM calls (instant!)</li>
+          </ul>
+          <p>This is a practical optimization: once you've built the graph once, you don't need to redo it every time you restart the notebook — unless the source data changes.</p>
+        </div>
+
+        <h4>📋 What the LLM actually output (the messy reality)</h4>
+        <p>Here's a comparison of actual LLM outputs vs what was expected:</p>
+
+        <table class="triple-table">
+          <tr><th>Doc</th><th>Input text (what the LLM saw)</th><th>LLM Output (what we got)</th></tr>
+          <tr class="bad">
+            <td>0</td>
+            <td>Albert Einstein developed the theory of relativity...</td>
+            <td>(Einstein, developed the theory of relativity, Albert)<br>⚠️ Albert split! "Einstein" and "Albert" become separate entities</td>
+          </tr>
+          <tr class="bad">
+            <td>2</td>
+            <td>The Manhattan Project was a secret U.S. project...</td>
+            <td>Subject1, Subject2, Predicate1<br>Subject2, Subject2, Predicate2<br>🔴 LLM copied the prompt example placeholders!</td>
+          </tr>
+          <tr class="good">
+            <td>1</td>
+            <td>Marie Curie discovered polonium and radium...</td>
+            <td>Marie Curie, discovered polonium and radium, significantly advancing radioactivity research.<br>✅ Mostly correct (though the predicate is long)</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="search">🔍 7. Search Logic (Cells 15–16)</h2>
+
+    <h3>Cell 15 — Directed Search (alternative, not used in main flow)</h3>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [15]</span>
+        <span class="cell-type">code · no output (function definition)</span>
+      </div>
+      <div class="cell-body">
+        <p><code>search_graph_directed</code> does BFS (Breadth-First Search) on the directed version of the graph — it follows arrows in their defined direction only.</p>
+
+        <div class="box concept">
+          <strong>🔵 What is BFS (Breadth-First Search)?</strong>
+          <p>BFS is a classic graph traversal algorithm. Imagine you're standing at a node (your anchor entity). BFS explores all neighbors first (depth 1), then all neighbors of neighbors (depth 2), etc.</p>
+          <p>Visual example for anchor = Einstein, depth = 2:</p>
+          <div class="output-box">Depth 0: [Einstein]
+Depth 1: [Theory of Relativity, Quantum Mechanics, Manhattan Project]
+Depth 2: [Atomic Bomb, Physics, World War II, ...]
+All these nodes become your "subgraph" context.</div>
+          <p>Setting <code>depth=2</code> keeps the context focused. At depth 5 you might end up with half the graph — too much noise for the LLM to process.</p>
+        </div>
+
+        <p>This directed version isn't used in the main pipeline because with messy extracted data, many connections point the "wrong" direction. The undirected version in Cell 16 is more resilient.</p>
+      </div>
+    </div>
+
+    <h3>Cell 16 — The Main Search Function (fuzzy, undirected)</h3>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [16]</span>
+        <span class="cell-type">code · no output (function definitions)</span>
+      </div>
+      <div class="cell-body">
+<div class="code-block"><span class="keyword">def</span> <span class="func">_camel_split</span>(text):
+    <span class="string">"""AlbertEinstein → albert einstein"""</span>
+    spaced = re.sub(r<span class="string">"([a-z])([A-Z])"</span>, r<span class="string">"\1 \2"</span>, text)
+    <span class="keyword">return</span> spaced.lower()
+
+<span class="keyword">def</span> <span class="func">_node_word_score</span>(anchor_words, node):
+    node_words = set(re.findall(r<span class="string">"[a-z]+"</span>, _camel_split(node)))
+    <span class="keyword">return</span> len(anchor_words &amp; node_words) / max(len(anchor_words), len(node_words))
+
+<span class="keyword">def</span> <span class="func">search_graph</span>(anchor, depth=2):
+    <span class="keyword">if</span> anchor not in G:
+        <span class="comment"># Fuzzy fallback: find closest node by word overlap</span>
+        anchor_words = set(w <span class="keyword">for</span> w <span class="keyword">in</span> re.findall(r<span class="string">"[a-z]+"</span>, _camel_split(anchor)) <span class="keyword">if</span> len(w) > 2)
+        best_node, best_score = None, <span class="number">0.0</span>
+        <span class="keyword">for</span> node <span class="keyword">in</span> G.nodes():
+            score = _node_word_score(anchor_words, node)
+            <span class="keyword">if</span> score > best_score:
+                best_score, best_node = score, node
+        <span class="keyword">if</span> best_node <span class="keyword">and</span> best_score >= <span class="number">0.25</span>:
+            nonlocal_anchor = best_node  <span class="comment"># use the closest match</span>
+
+    undirected_G = G.to_undirected()  <span class="comment"># ignore arrow direction</span>
+    <span class="comment"># BFS on undirected graph from anchor node</span>
+    ...</div>
+
+        <div class="box insight">
+          <strong>💡 Why CamelCase splitting?</strong>
+          <p>The LLM sometimes wrote entity names without spaces — like <code>AlbertEinstein</code> or <code>QuantumMechanics</code>. If you searched for "Albert Einstein" but the graph only had "AlbertEinstein", a plain string match would fail.</p>
+          <p><code>_camel_split</code> uses a regex to insert spaces before capital letters that follow lowercase letters:</p>
+          <div class="output-box">AlbertEinstein  →  Albert Einstein  →  albert einstein
+ManhattanProject  →  Manhattan Project  →  manhattan project</div>
+          <p>This normalizes both the user's query words and the graph node names before comparing them.</p>
+        </div>
+
+        <div class="box insight">
+          <strong>💡 Why use undirected search?</strong>
+          <p>When a directed graph has messy data, arrows often point in unexpected directions. For example, the LLM might extract <code>(Albert, developed, Einstein)</code> when it should be <code>(Einstein, developed, Relativity)</code>. In directed BFS from "Einstein", you'd never reach "Albert" because the arrow goes the wrong way.</p>
+          <p>Converting to undirected (<code>G.to_undirected()</code>) treats all edges as bidirectional — much more resilient when extraction quality is imperfect.</p>
+        </div>
+
+        <div class="box concept">
+          <strong>🔵 Word-overlap scoring</strong>
+          <p>Given anchor words <code>{albert, einstein}</code> and a graph node <code>"Albert Einstein"</code>:</p>
+          <div class="output-box">node_words = {albert, einstein}
+intersection = {albert, einstein}  (2 words match)
+score = 2 / max(2, 2) = 1.0  ← perfect match
+
+For node "AlbertEinstein":
+_camel_split → "albert einstein" → {albert, einstein}
+score = 2/2 = 1.0  ← also perfect match!
+
+For node "Subject1":
+_camel_split → "subject1" → {subject}  (digits stripped)
+score = 0/2 = 0.0  ← no match</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="anchor">📌 8. Anchor Detection (Cell 18)</h2>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [18]</span>
+        <span class="cell-type">code · no output (function definition)</span>
+      </div>
+      <div class="cell-body">
+<div class="code-block"><span class="keyword">def</span> <span class="func">detect_anchor_entity</span>(question):
+    question_words = set(w <span class="keyword">for</span> w <span class="keyword">in</span> re.findall(r<span class="string">"[a-z]+"</span>, question.lower()) <span class="keyword">if</span> len(w) > 2)
+
+    <span class="comment"># Score every known entity against the question words</span>
+    <span class="keyword">for</span> entity <span class="keyword">in</span> sorted_entities:
+        normalized = camel_split(entity).lower()
+        entity_words = re.findall(r<span class="string">"[a-z]+"</span>, normalized)
+        score = sum(<span class="number">1</span> <span class="keyword">for</span> w <span class="keyword">in</span> entity_words <span class="keyword">if</span> w <span class="keyword">in</span> question_words) / len(entity_words)
+        <span class="comment"># score = fraction of entity words found in question</span>
+
+    <span class="keyword">return</span> best_entity  <span class="comment"># entity with highest overlap score</span></div>
+
+        <div class="box concept">
+          <strong>🔵 What is an Anchor Entity?</strong>
+          <p>The anchor is the "main character" of your question — the node in the graph where you start searching. If you ask "What did Galileo discover?", the anchor is Galileo. You then do BFS from that node to find all connected facts.</p>
+          <p>Getting the anchor right is crucial: a wrong anchor means you search the wrong neighborhood and get irrelevant facts.</p>
+        </div>
+
+        <div class="box warning">
+          <strong>⚠️ Why not use the LLM for anchor detection?</strong>
+          <p>An earlier version did use the LLM here. It asked: "What is the main entity in this question?" But with qwen2:0.5b, the LLM would answer things like:</p>
+          <div class="output-box">"The main entity is Subject3 (Albert Einstein), which represents..."</div>
+          <p>The small model couldn't reliably identify just the entity name. It added verbosity that broke the matching. The deterministic word-overlap approach is much more reliable — and requires no LLM call, making it faster.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="visualize">📊 9. Visualization (Cell 19)</h2>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [19]</span>
+        <span class="cell-type">code · no output (function definition — called later in Cell 23)</span>
+      </div>
+      <div class="cell-body">
+<div class="code-block"><span class="keyword">def</span> <span class="func">visualize_subgraph</span>(query, depth=2):
+    anchor_entity = detect_anchor_entity(query)
+    <span class="comment"># BFS to collect nearby nodes</span>
+    SG = G.subgraph(sub_nodes)  <span class="comment"># extract subgraph</span>
+
+    plt.figure(figsize=(<span class="number">10</span>, <span class="number">7</span>))
+    pos = nx.spring_layout(SG, seed=<span class="number">42</span>)
+    nx.draw_networkx_nodes(SG, pos, node_size=<span class="number">600</span>, node_color=<span class="string">"#FFEEEE"</span>)
+    nx.draw_networkx_edges(SG, pos, arrows=<span class="keyword">True</span>)
+    nx.draw_networkx_labels(SG, pos)
+    edge_labels = {(u, v): data[<span class="string">"relation"</span>] <span class="keyword">for</span> u, v, data <span class="keyword">in</span> SG.edges(data=<span class="keyword">True</span>)}
+    nx.draw_networkx_edge_labels(SG, pos, edge_labels=edge_labels)
+    plt.title(f<span class="string">"Subgraph for: '{anchor_entity}'"</span>)
+    plt.show()</div>
+
+        <div class="box concept">
+          <strong>🔵 What is Spring Layout?</strong>
+          <p><code>nx.spring_layout</code> uses a physics simulation: nodes repel each other like magnets, while edges act like springs pulling connected nodes together. After the simulation converges, nodes that are tightly connected cluster visually, and isolated nodes spread to the edges.</p>
+          <p>The <code>seed=42</code> makes the layout deterministic — same input always produces the same visual arrangement. Without it, the graph would look different every run.</p>
+        </div>
+
+        <p>This function isn't called until Cell 23. When it runs, you see a graph image showing:</p>
+        <ul>
+          <li>Nodes = entities (pink circles labeled with entity names)</li>
+          <li>Arrows = relationships (with the predicate as the label on the arrow)</li>
+          <li>All nodes within 2 hops of "Albert Einstein"</li>
+        </ul>
+
+        <div class="box warning">
+          <strong>⚠️ Why the visualization looks cluttered</strong>
+          <p>Because the graph contains garbage node names (<code>Subject1</code>, <code>Albert</code> separate from <code>Albert Einstein</code>, etc.), the visualization shows many small isolated clusters instead of a clean "Einstein hub". You'll see nodes like <code>Theoretical physicist.</code> connected to <code>Albert Einstein</code> — which is technically from the extraction but not very meaningful.</p>
+          <p>In a clean run with a good LLM, the visualization would show a beautifully organized network of historical connections.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="qa">🤔 10. The Q&A Pipeline (Cell 21)</h2>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [21]</span>
+        <span class="cell-type">code · no output (function definition — the main RAG function)</span>
+      </div>
+      <div class="cell-body">
+<div class="code-block"><span class="keyword">def</span> <span class="func">answer_question_with_graph</span>(query, depth=2):
+    <span class="comment"># Step 1: Find the best matching entity in the graph</span>
+    anchor_entity = detect_anchor_entity(query)
+
+    <span class="comment"># Step 2: BFS to get the neighborhood subgraph</span>
+    subgraph = search_graph(anchor_entity, depth=depth)
+
+    <span class="comment"># Step 3: Convert subgraph edges to text strings</span>
+    context = [f<span class="string">"{u} {data['relation']} {v}."</span>
+               <span class="keyword">for</span> u, v, data <span class="keyword">in</span> subgraph.edges(data=<span class="keyword">True</span>)]
+    context_text = <span class="string">"\n"</span>.join(context)
+
+    <span class="comment"># Step 4: Ask LLM to answer using only the graph context</span>
+    response = llm.invoke(
+        f<span class="string">"Answer the question based on these facts:\n\n{context_text}\n\nQuestion: {query}"</span>
+    )
+
+    <span class="keyword">return</span> context, response.content</div>
+
+        <div class="box concept">
+          <strong>🔵 This is the RAG loop — explained step by step</strong>
+          <p>This function is the heart of the whole notebook. Here's what happens end-to-end when you call it:</p>
+          <ol>
+            <li><strong>Anchor detection:</strong> "How did Einstein contribute to the atomic bomb?" → <code>detect_anchor_entity</code> finds "Albert Einstein" (score 1.0 because both "albert" and "einstein" appear in the question).</li>
+            <li><strong>Graph retrieval:</strong> BFS from "Albert Einstein" collects all nodes within 2 hops in the undirected graph.</li>
+            <li><strong>Context formatting:</strong> Each edge becomes a sentence: <code>"Albert Einstein discovered-theory-of-relativity Quantum Mechanics."</code></li>
+            <li><strong>LLM answering:</strong> The LLM receives: "Answer based on these facts: [graph edges as text] Question: [your question]" and generates a response.</li>
+          </ol>
+        </div>
+
+        <div class="box insight">
+          <strong>💡 Why does GraphRAG help? (vs just asking the LLM directly)</strong>
+          <p>If you ask the LLM directly: <em>"How did Einstein contribute to the atomic bomb?"</em> — it answers from training data. This works for famous facts, but fails for:</p>
+          <ul>
+            <li>Private company data the LLM never saw</li>
+            <li>Recent events after the training cutoff</li>
+            <li>Specific facts in your documents</li>
+          </ul>
+          <p>With GraphRAG, you inject <em>your specific knowledge</em> into the prompt. The LLM is guided to use <em>your data</em>, not just its memorized training data. The graph structure ensures only the <em>relevant</em> facts are included — not the entire knowledge base, which would overflow the context window.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="run">🚀 11. The Full Run (Cells 23–25)</h2>
+
+    <h3>Cell 23 — Asking a Question</h3>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [23]</span>
+        <span class="cell-type">code · has output + graph visualization</span>
+      </div>
+      <div class="cell-body">
+<div class="code-block">question = <span class="string">"How did Albert Einstein contribute to the development of the atomic bomb?"</span>
+depth = <span class="number">2</span>
+retrieved_chunks, response = answer_question_with_graph(question, depth)
+print(response)
+visualize_subgraph(question, depth)</div>
+
+        <div class="output-box">✅ Detected anchor entity: Albert Einstein (score: 1.00)
+🔍 Detected anchor entity: Albert Einstein
+
+Retrieved Chunks:
+- Albert Einstein albert einstein Theoretical physicist..
+- Albert Einstein theoretical physicist(t7 Albert Einstein(T8.
+
+Answer:
+Albert Einstein contributed significantly to the development of the atomic bomb.
+He was a key figure in the Manhattan Project, a United States government program
+designed to build atomic bombs for the Allies during World War II...</div>
+
+        <h4>Breaking down the output:</h4>
+
+        <p><strong>Why score 1.00?</strong></p>
+        <p>The question contains both "albert" and "einstein". The entity "Albert Einstein" in the graph contains both "albert" and "einstein". Score = 2 matching words / 2 entity words = 1.0. Perfect match.</p>
+
+        <p><strong>Why are the Retrieved Chunks so messy?</strong></p>
+        <p>Those chunks come directly from the graph edges. They look like <code>"Albert Einstein albert einstein Theoretical physicist.."</code> because:</p>
+        <ul>
+          <li>The LLM extracted "albert einstein" (lowercase) as a <em>separate entity</em> from "Albert Einstein"</li>
+          <li>It also created "Theoretical physicist" as a node connected to Einstein</li>
+          <li>These messy edges end up in the subgraph and are formatted as context text</li>
+        </ul>
+
+        <div class="box insight">
+          <strong>💡 The "Lucky Answer" phenomenon</strong>
+          <p>Despite the garbage context (<em>"Albert Einstein albert einstein Theoretical physicist.."</em>), the LLM's answer is actually quite good — it correctly explains Einstein's role in the Manhattan Project.</p>
+          <p>Why? Because <strong>the LLM already knows about Einstein and the atomic bomb from its training data</strong>. The graph context confirmed "Einstein → physics → bomb" direction, and the model filled in the rest from memory.</p>
+          <p>This would NOT work for private data. If the question were "How did CEO John Smith contribute to Project X?" and the graph context was garbage, the LLM would have no fallback and would hallucinate completely.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Cell 24 — Printing All Graph Nodes</h3>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [24]</span>
+        <span class="cell-type">code · diagnostic output</span>
+      </div>
+      <div class="cell-body">
+        <div class="output-box">['Einstein', 'Albert', 'Marie Curie', 'significantly advancing radioactivity research.',
+ 'Albert Einstein', 'Theoretical physicist.', 'Subject1', 'Predicate1',
+ 'Subject2', 'Predicate2', 'Object1', 'Object2', 'Polonium', 'Radium',
+ 'Subject3', 'Subject4', 'Theoretical physicist', 'Subject5',
+ 'Galileo Galilei', 'Subject6', 'Heliocentrism', 'Subject7', 'Subject8',
+ 'heliocentesis', 'Object3', 'Object4', 'SubjectT1', 'ObjectT1',
+ 'Albert Einstein(T8', 'Polonium(T1', ...]</div>
+
+        <p>This is the "autopsy" of the graph — it shows exactly what the LLM extraction produced. Let's categorize:</p>
+
+        <div class="node-grid">
+          <span class="node-tag good">Marie Curie ✅</span>
+          <span class="node-tag good">Albert Einstein ✅</span>
+          <span class="node-tag good">Galileo Galilei ✅</span>
+          <span class="node-tag good">Polonium ✅</span>
+          <span class="node-tag good">Radium ✅</span>
+          <span class="node-tag good">Heliocentrism ✅</span>
+          <span class="node-tag bad">Einstein ❌ (split from "Albert Einstein")</span>
+          <span class="node-tag bad">Albert ❌ (split from "Albert Einstein")</span>
+          <span class="node-tag bad">Subject1 ❌ (placeholder from prompt example)</span>
+          <span class="node-tag bad">Predicate1 ❌ (placeholder — shouldn't be a node!)</span>
+          <span class="node-tag bad">Object1 ❌ (same)</span>
+          <span class="node-tag ugly">significantly advancing radioactivity research. ⚠️ (full sentence as node!)</span>
+          <span class="node-tag ugly">Theoretical physicist. ⚠️ (description, not entity)</span>
+          <span class="node-tag ugly">heliocentesis ⚠️ (misspelling of heliocentrism!)</span>
+          <span class="node-tag ugly">Albert Einstein(T8 ⚠️ (uncleaned bracket from LLM output)</span>
+        </div>
+
+        <div class="box danger">
+          <strong>🔴 Root cause analysis: three types of extraction failures</strong>
+          <ol>
+            <li><strong>Name splitting:</strong> "Albert Einstein" became "Albert" + "Einstein" separately. The LLM didn't treat the full name as one entity.</li>
+            <li><strong>Prompt copying:</strong> "Subject1", "Predicate1", "Object1" — the model literally copied the example format names from the prompt template, treating them as real data.</li>
+            <li><strong>Object as node:</strong> "significantly advancing radioactivity research." is the full predicate/object phrase dumped as a node instead of being split properly.</li>
+          </ol>
+          <p>All three failures are characteristic of models under ~7B parameters on strict structured output tasks.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Cell 25 — Searching for Relativity Edges</h3>
+
+    <div class="cell-card">
+      <div class="cell-header">
+        <span class="cell-num">In [25]</span>
+        <span class="cell-type">code · no output (empty result)</span>
+      </div>
+      <div class="cell-body">
+<div class="code-block"><span class="keyword">for</span> u, v, data <span class="keyword">in</span> G.edges(data=<span class="keyword">True</span>):
+    <span class="keyword">if</span> <span class="string">"relativity"</span> in u.lower() <span class="keyword">or</span> <span class="string">"relativity"</span> in v.lower():
+        print(f<span class="string">"{u} --{data['relation']}--> {v}"</span>)</span></div>
+
+        <div class="output-box">(no output)</div>
+
+        <p>This searches for any <em>node</em> containing the word "relativity". It finds nothing because the LLM never created a node called "Theory of Relativity" or "Relativity".</p>
+
+        <p>What likely happened in extraction: the LLM put "relativity" inside the <em>predicate</em> (the edge label), not as a subject or object node. For example:</p>
+        <div class="output-box">Einstein, developed the theory of relativity, Albert
+         ← "developed the theory of relativity" is the PREDICATE here, not a node name</div>
+
+        <p>To find relativity-related content, you'd need to search edge labels instead:</p>
+<div class="code-block"><span class="keyword">for</span> u, v, data <span class="keyword">in</span> G.edges(data=<span class="keyword">True</span>):
+    <span class="keyword">if</span> <span class="string">"relativity"</span> in data.get(<span class="string">"relation"</span>, <span class="string">""</span>).lower():
+        print(f<span class="string">"{u} --{data['relation']}--> {v}"</span>)</span></div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="why-weird">🐛 12. Why Everything Looks Weird — The Small Model Problem</h2>
+
+    <div class="box danger">
+      <strong>🔴 The Core Issue: Model Size vs Task Complexity</strong>
+      <p>qwen2:0.5b has 500 million parameters. Structured information extraction (producing clean JSON or triples from free text) typically requires at least 7–13 billion parameters to work reliably. The task involves:</p>
+      <ul>
+        <li>Understanding what counts as a "named entity" vs a description</li>
+        <li>Recognizing full names as single units (Albert Einstein, not Albert + Einstein)</li>
+        <li>Following strict output format rules without deviating to natural language</li>
+        <li>Not copying example placeholder text from the prompt</li>
+      </ul>
+      <p>This is simply too much for a 0.5B model. It's impressive it works at all.</p>
+    </div>
+
+    <table class="compare-table">
+      <tr>
+        <th style="width:40%">What you got (qwen2:0.5b)</th>
+        <th style="width:40%">What you'd get (GPT-4o or Llama-3-70b)</th>
+      </tr>
+      <tr>
+        <td class="col-bad">Nodes: "Einstein", "Albert", "Albert Einstein" (three separate nodes for one person)</td>
+        <td class="col-good">Single node: "Albert Einstein"</td>
+      </tr>
+      <tr>
+        <td class="col-bad">Nodes: "Subject1", "Predicate1", "Object1" (prompt contamination)</td>
+        <td class="col-good">Clean entity names: "Theory of Relativity", "Manhattan Project"</td>
+      </tr>
+      <tr>
+        <td class="col-bad">"significantly advancing radioactivity research." as a node (phrase dump)</td>
+        <td class="col-good">Separate nodes: "Radioactivity", "Research", with "advancing" as predicate</td>
+      </tr>
+      <tr>
+        <td class="col-bad">heliocentesis (misspelling)</td>
+        <td class="col-good">Heliocentrism (correct)</td>
+      </tr>
+      <tr>
+        <td class="col-bad">Messy retrieved chunks with duplicate entities</td>
+        <td class="col-good">Clean, precise facts: "Einstein → influenced → Manhattan Project"</td>
+      </tr>
+    </table>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="perfect-run">✨ 13. What a Perfect Run Would Look Like</h2>
+
+    <p>If you ran this with a better LLM (e.g., <code>llama3:8b</code> or even <code>qwen2:7b</code>), Cell 14 would produce something like this:</p>
+
+    <div class="box insight">
+      <strong>💚 Clean extraction output (ideal)</strong>
+      <div class="output-box">--- LLM Output for doc 0 ---
+Triples:
+Albert Einstein, developed, Theory of Relativity
+Albert Einstein, influenced, Quantum Mechanics
+
+New Entities:
+Theory of Relativity
+Quantum Mechanics</div>
+    </div>
+
+    <p>And Cell 24 would show a clean node list:</p>
+    <div class="output-box">['Albert Einstein', 'Theory of Relativity', 'Quantum Mechanics',
+ 'Marie Curie', 'Polonium', 'Radium', 'Radioactivity',
+ 'Manhattan Project', 'Atomic Bomb', 'World War II',
+ 'Isaac Newton', 'Laws of Motion', 'Universal Gravitation',
+ 'Galileo Galilei', 'Heliocentrism', 'Catholic Church',
+ 'Alexander Fleming', 'Penicillin', 'Antibiotics', ...]</div>
+
+    <p>Cell 25 (searching for "relativity") would give:</p>
+    <div class="output-box">Albert Einstein --developed--> Theory of Relativity
+Theory of Relativity --used by--> Quantum Mechanics
+Theory of Relativity --referenced by--> Manhattan Project</div>
+
+    <p>And the visualization would show a beautiful hub-and-spoke network with Einstein at the center, cleanly connected to all his contributions.</p>
+
+    <div class="box tip">
+      <strong>💜 How to improve this notebook</strong>
+      <ol>
+        <li><strong>Use a bigger model:</strong> <code>ollama pull llama3:8b</code> or <code>ollama pull qwen2.5:7b</code> — 8B+ models handle structured extraction much better</li>
+        <li><strong>Lower temperature for extraction:</strong> Change <code>temperature=0.7</code> to <code>temperature=0.1</code> for the extraction step — less creativity, more consistency</li>
+        <li><strong>Add entity normalization:</strong> Post-process extracted entities with a deduplication step (e.g., fuzzy merge "Einstein" + "Albert" + "Albert Einstein" into one node)</li>
+        <li><strong>Use JSON output:</strong> Instruct the LLM to output JSON instead of plain text — easier to parse reliably</li>
+        <li><strong>Add NER pre-processing:</strong> Use spaCy or NLTK to identify named entities first, then ask the LLM only to identify relationships between them</li>
+      </ol>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <h2 id="glossary">🎓 14. Key Concepts Glossary</h2>
+
+    <div class="glossary-item">
+      <div class="glossary-term">Knowledge Graph</div>
+      <div>A database that stores information as <em>nodes</em> (entities: people, places, concepts) and <em>edges</em> (relationships). Unlike a table, it's optimized for navigating connections. Example: Google's Knowledge Panel uses a knowledge graph to show you "Albert Einstein → spouse → Mileva Marić".</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">Triple (S, P, O)</div>
+      <div>The atomic unit of a knowledge graph: Subject → Predicate → Object. One fact. Every edge in the graph is a triple. Named after the Resource Description Framework (RDF) from the Semantic Web standards.</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">RAG</div>
+      <div>Retrieval Augmented Generation. A pattern where you retrieve relevant context from a knowledge store and inject it into the LLM's prompt, so the model can answer questions about data it wasn't trained on.</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">GraphRAG</div>
+      <div>RAG where the knowledge store is a graph instead of a vector database. Retrieval follows graph relationships (BFS) rather than vector similarity. Better for multi-hop reasoning: "Who influenced the person who discovered X?"</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">MultiDiGraph</div>
+      <div>A directed graph (arrows have direction) that allows multiple edges between the same two nodes. "Einstein influenced Quantum Mechanics" AND "Einstein contributed to Manhattan Project" can both exist as edges from Einstein.</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">BFS (Breadth-First Search)</div>
+      <div>A graph traversal algorithm that explores nodes level by level — first all direct neighbors (depth 1), then their neighbors (depth 2), etc. Used here to collect the "neighborhood" around an anchor entity.</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">Anchor Entity</div>
+      <div>The starting node for a graph search, determined by matching the user's question words to graph entity names. The quality of anchor detection directly affects the quality of retrieved context.</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">Temperature</div>
+      <div>An LLM parameter (0.0–1.0+) controlling output randomness. 0 = deterministic/repetitive. 0.7 = balanced. 1.0+ = creative but unpredictable. For structured extraction tasks, low temperature (0.0–0.2) gives more consistent formatting.</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">Chunking / Text Splitting</div>
+      <div>Breaking long documents into smaller pieces that fit within an LLM's context window. RecursiveCharacterTextSplitter tries natural break points (paragraphs → sentences → words) before cutting mid-word. Overlap ensures context isn't lost at boundaries.</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">LangChain LCEL</div>
+      <div>LangChain Expression Language. The <code>|</code> pipe syntax chains components into a pipeline: <code>prompt | llm | parser</code>. Each component's output becomes the next one's input. Makes complex AI pipelines readable and composable.</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">CamelCase Normalization</div>
+      <div>Converting camelCase or PascalCase strings to space-separated words: AlbertEinstein → Albert Einstein. Used here to handle LLM outputs that wrote names without spaces. The regex <code>([a-z])([A-Z])</code> finds the boundary between lower and upper case.</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">Spring Layout</div>
+      <div>A graph visualization algorithm that simulates physics: nodes repel each other (like magnets), edges attract connected nodes (like springs). The result is an organic, aesthetically pleasant layout where clusters of connected nodes appear visually close together.</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">Word-overlap scoring</div>
+      <div>A simple but effective similarity metric: count how many words two strings share, divided by the total unique words. <code>score = |intersection| / |union|</code> (Jaccard similarity). Used here to match question words to entity names.</div>
+    </div>
+
+    <div class="glossary-item">
+      <div class="glossary-term">Ollama</div>
+      <div>An open-source tool for running LLMs locally. Manages model downloads, serves them over HTTP (port 11434), handles GPU/CPU inference. Think of it as "Docker for LLMs" — a runtime that packages models and serves them via a standard API.</div>
+    </div>
+
+  </div><!-- /content -->
+
+  <div class="page-footer">
+    Generated from: <em>Historical_GraphRAG_Demo.ipynb</em> · Notebook: GraphRAG with Ollama qwen2:0.5b · Explainer by Crunch 🦃
+  </div>
+
+</div><!-- /page -->
+
+</body>
+</html>
