@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIRAGE Framework Explained</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#1e40af',
+                        accent: '#10b981',
+                        dark: '#1f2937'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+        }
+        
+        .pillar-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid;
+        }
+        
+        .pillar-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .flow-diagram {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            position: relative;
+        }
+        
+        .flow-diagram::before {
+            content: "";
+            position: absolute;
+            top: 40px;
+            left: 10%;
+            right: 10%;
+            height: 3px;
+            background: #3b82f6;
+            z-index: 0;
+        }
+        
+        .flow-step {
+            z-index: 1;
+        }
+        
+        .highlight-rag {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .highlight-rag::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.5) 0%, rgba(16, 185, 129, 0.5) 100%);
+            border-radius: 3px;
+            z-index: -1;
+        }
+        
+        .pirate-theme {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pirate-theme::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="none" stroke="%233b82f6" stroke-width="0.5" stroke-dasharray="5,5"/></svg>');
+            opacity: 0.1;
+            z-index: -1;
+        }
+        
+        .pirate-hat {
+            position: absolute;
+            top: -20px;
+            right: 20px;
+            font-size: 2rem;
+            transform: rotate(20deg);
+            color: #a16207;
+            z-index: 10;
+        }
+        
+        .comparison-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .comparison-table th, 
+        .comparison-table td {
+            padding: 1rem;
+            text-align: left;
+        }
+        
+        .comparison-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        
+        @media (max-width: 768px) {
+            .flow-diagram {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .flow-diagram::before {
+                display: none;
+            }
+            
+            .flow-step {
+                position: relative;
+                padding-left: 40px;
+            }
+            
+            .flow-step::before {
+                content: "";
+                position: absolute;
+                top: 30px;
+                left: 15px;
+                height: calc(100% + 30px);
+                width: 3px;
+                background: #3b82f6;
+            }
+            
+            .flow-step:last-child::before {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="text-dark">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-primary to-secondary text-white py-12 relative pirate-theme">
+        <i class="fas fa-hat-cowboy pirate-hat"></i>
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-5xl md:text-6xl font-bold mb-4">
+                <span class="text-white">PI</span>
+                <span class="text-accent">RAG</span>
+                <span class="text-white">E</span>
+            </h1>
+            <p class="text-xl md:text-2xl max-w-3xl mx-auto">
+                From Linear RAG to Agentic, AI-Assisted Systems
+            </p>
+            <div class="mt-8 flex justify-center">
+                <div class="bg-white text-primary font-semibold py-2 px-6 rounded-full shadow-lg inline-block">
+                    Retrieval-Augmented Generation Framework
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Introduction Section -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold mb-8 text-center">
+                    <span class="highlight-rag">PIRAGE Framework</span> Explained
+                </h2>
+                <div class="bg-blue-50 p-6 rounded-xl mb-8">
+                    <p class="mb-4">
+                        Retrieval-Augmented Generation (RAG) enhances Large Language Models (LLMs) with external knowledge, enabling answers grounded in real data. 
+                    </p>
+                    <p>
+                        <span class="font-bold text-primary">PIRAGE</span> is a structured refinement of RAG, split into five clear pillars:
+                    </p>
+                </div>
+                
+                <div class="flow-diagram my-12">
+                    <!-- P -->
+                    <div class="flow-step text-center">
+                        <div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center mx-auto mb-2">
+                            <span class="text-white text-xl font-bold">P</span>
+                        </div>
+                        <h3 class="font-semibold">Parse</h3>
+                        <p class="text-sm mt-1">Raw to structured data</p>
+                    </div>
+                    
+                    <!-- I -->
+                    <div class="flow-step text-center">
+                        <div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center mx-auto mb-2">
+                            <span class="text-white text-xl font-bold">I</span>
+                        </div>
+                        <h3 class="font-semibold">Index</h3>
+                        <p class="text-sm mt-1">Organize for search</p>
+                    </div>
+                    
+                    <!-- R -->
+                    <div class="flow-step text-center">
+                        <div class="w-16 h-16 rounded-full bg-accent flex items-center justify-center mx-auto mb-2">
+                            <span class="text-white text-xl font-bold">R</span>
+                        </div>
+                        <h3 class="font-semibold">Retrieve</h3>
+                        <p class="text-sm mt-1">Find relevant info</p>
+                    </div>
+                    
+                    <!-- AG -->
+                    <div class="flow-step text-center">
+                        <div class="w-16 h-16 rounded-full bg-accent flex items-center justify-center mx-auto mb-2">
+                            <span class="text-white text-xl font-bold">AG</span>
+                        </div>
+                        <h3 class="font-semibold">Augmented Generation</h3>
+                        <p class="text-sm mt-1">Generate answers</p>
+                    </div>
+                    
+                    <!-- E -->
+                    <div class="flow-step text-center">
+                        <div class="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-2">
+                            <span class="text-white text-xl font-bold">E</span>
+                        </div>
+                        <h3 class="font-semibold">Evaluation</h3>
+                        <p class="text-sm mt-1">Continuous monitoring</p>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-xl border-l-4 border-secondary">
+                    <h3 class="font-bold text-lg mb-3">Two Implementation Models:</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-4 rounded-lg shadow border border-blue-100">
+                            <h4 class="font-bold text-primary flex items-center">
+                                <i class="fas fa-ship mr-2"></i> Basic PIRAGE
+                            </h4>
+                            <p class="mt-2">Simple, linear pipeline perfect for newcomers and initial implementations.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow border border-green-100">
+                            <h4 class="font-bold text-accent flex items-center">
+                                <i class="fas fa-robot mr-2"></i> PIRAGE-A
+                            </h4>
+                            <p class="mt-2">Advanced, agentic evolution with AI-assisted services and dynamic orchestration.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Basic PIRAGE Section -->
+    <section class="py-16 bg-gradient-to-br from-blue-50 to-cyan-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold mb-12 text-center">
+                <i class="fas fa-ship text-primary mr-3"></i> Basic PIRAGE - The Linear Model
+            </h2>
+            
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white p-6 rounded-xl shadow-lg mb-12">
+                    <p class="mb-4">
+                        The basic model runs as a straight, predictable flow. It's designed to be easy to understand before exploring advanced techniques.
+                    </p>
+                    <div class="flex items-center mt-6">
+                        <div class="bg-primary rounded-full p-2 mr-4">
+                            <i class="fas fa-water text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg">Two Phases:</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div class="bg-blue-50 p-5 rounded-lg border-l-4 border-primary">
+                            <h4 class="font-bold text-primary flex items-center">
+                                <i class="fas fa-arrow-up mr-2"></i> Upstream Preprocessing
+                            </h4>
+                            <p class="mt-2">Preparing knowledge before any query</p>
+                            <ul class="mt-3 space-y-2">
+                                <li class="flex items-start">
+                                    <i class="fas fa-caret-right text-primary mt-1 mr-2"></i>
+                                    <span><span class="font-bold">P</span> - Parse</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-caret-right text-primary mt-1 mr-2"></i>
+                                    <span><span class="font-bold">I</span> - Index</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-cyan-50 p-5 rounded-lg border-l-4 border-cyan-500">
+                            <h4 class="font-bold text-cyan-700 flex items-center">
+                                <i class="fas fa-arrow-right mr-2"></i> Query Flow
+                            </h4>
+                            <p class="mt-2">Using prepared knowledge to answer questions</p>
+                            <ul class="mt-3 space-y-2">
+                                <li class="flex items-start">
+                                    <i class="fas fa-caret-right text-accent mt-1 mr-2"></i>
+                                    <span><span class="font-bold">R</span> - Retrieve</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-caret-right text-accent mt-1 mr-2"></i>
+                                    <span><span class="font-bold">AG</span> - Augmented Generation</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 p-4 bg-secondary text-white rounded-lg flex items-start">
+                        <i class="fas fa-chart-line text-2xl mr-4 mt-1"></i>
+                        <div>
+                            <h4 class="font-bold">Evaluation (E)</h4>
+                            <p class="mt-2">Runs throughout, monitoring quality at every step</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Parse Card -->
+                    <div class="pillar-card bg-white p-6 rounded-xl shadow border-l-4 border-primary">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center mr-3">
+                                <span class="text-white font-bold">P</span>
+                            </div>
+                            <h3 class="text-xl font-bold">Parse</h3>
+                        </div>
+                        <p>Turns raw, unstructured documents into clean, structured segments.</p>
+                        <div class="mt-4">
+                            <div class="flex items-start mb-2">
+                                <i class="fas fa-sign-in-alt text-primary mt-1 mr-2"></i>
+                                <span><span class="font-semibold">Input:</span> PDFs, web pages, Word docs, etc.</span>
+                            </div>
+                            <div class="flex items-start mb-2">
+                                <i class="fas fa-cogs text-primary mt-1 mr-2"></i>
+                                <span><span class="font-semibold">Process:</span> Extract text, remove noise, normalize formatting</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-sign-out-alt text-primary mt-1 mr-2"></i>
+                                <span><span class="font-semibold">Output:</span> Parsed chunks + metadata</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Index Card -->
+                    <div class="pillar-card bg-white p-6 rounded-xl shadow border-l-4 border-primary">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center mr-3">
+                                <span class="text-white font-bold">I</span>
+                            </div>
+                            <h3 class="text-xl font-bold">Index</h3>
+                        </div>
+                        <p>Organizes parsed chunks for efficient searching.</p>
+                        <div class="mt-4">
+                            <div class="flex items-start mb-2">
+                                <i class="fas fa-sign-in-alt text-primary mt-1 mr-2"></i>
+                                <span><span class="font-semibold">Input:</span> Parsed chunks from P</span>
+                            </div>
+                            <div class="flex items-start mb-2">
+                                <i class="fas fa-cogs text-primary mt-1 mr-2"></i>
+                                <span><span class="font-semibold">Process:</span> Split into chunks, embed for semantic search</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-sign-out-alt text-primary mt-1 mr-2"></i>
+                                <span><span class="font-semibold">Output:</span> Searchable indices linked to chunks</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Retrieve Card -->
+                    <div class="pillar-card bg-white p-6 rounded-xl shadow border-l-4 border-accent">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 rounded-full bg-accent flex items-center justify-center mr-3">
+                                <span class="text-white font-bold">R</span>
+                            </div>
+                            <h3 class="text-xl font-bold">Retrieve</h3>
+                        </div>
+                        <p>Finds the most relevant chunks for a query.</p>
+                        <div class="mt-4">
+                            <div class="flex items-start mb-2">
+                                <i class="fas fa-sign-in-alt text-accent mt-1 mr-2"></i>
+                                <span><span class="font-semibold">Input:</span> User query, indices, parsed chunks</span>
+                            </div>
+                            <div class="flex items-start mb-2">
+                                <i class="fas fa-cogs text-accent mt-1 mr-2"></i>
+                                <span><span class="font-semibold">Process:</span> Search (semantic, keyword, hybrid), rank results</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-sign-out-alt text-accent mt-1 mr-2"></i>
+                                <span><span class="font-semibold">Output:</span> Ranked chunk list</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- AG Card -->
+                    <div class="pillar-card bg-white p-6 rounded-xl shadow border-l-4 border-accent">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 rounded-full bg-accent flex items-center justify-center mr-3">
+                                <span class="text-white font-bold">AG</span>
+                            </div>
+                            <h3 class="text-xl font-bold">Augmented Generation</h3>
+                        </div>
+                        <p>Generates the answer using retrieved evidence.</p>
+                        <div class="mt-4">
+                            <div class="flex items-start mb-2">
+                                <i class="fas fa-sign-in-alt text-accent mt-1 mr-2"></i>
+                                <span><span class="font-semibold">Input:</span> User query, ranked chunks</span>
+                            </div>
+                            <div class="flex items-start mb-2">
+                                <i class="fas fa-cogs text-accent mt-1 mr-2"></i>
+                                <span><span class="font-semibold">Process:</span> Select top chunks, generate answer with LLM</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-sign-out-alt text-accent mt-1 mr-2"></i>
+                                <span><span class="font-semibold">Output:</span> Final answer</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-12 bg-white p-6 rounded-xl shadow">
+                    <h3 class="text-xl font-bold mb-4 text-center">Basic PIRAGE Takeaway</h3>
+                    <div class="flex items-center justify-center">
+                        <div class="bg-primary rounded-full p-3 mr-4">
+                            <i class="fas fa-lightbulb text-white text-2xl"></i>
+                        </div>
+                        <p class="text-lg">
+                            A clear, step-by-step process that's easy to explain, easy to debug, and a solid foundation before moving to advanced capabilities.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PIRAGE-A Section -->
+    <section class="py-16 bg-gradient-to-br from-green-50 to-emerald-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold mb-12 text-center">
+                <i class="fas fa-robot text-accent mr-3"></i> PIRAGE-A - The Advanced / Agentic Model
+            </h2>
+            
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white p-6 rounded-xl shadow-lg mb-12">
+                    <p class="text-center text-lg mb-6">
+                        Once the basics are mastered, PIRAGE-A turns the pipeline into a <span class="font-bold text
+</body>
+</html>

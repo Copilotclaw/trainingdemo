@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 1600 520" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;">
+    <path d="M98.868,376.41L1138.67,378.108L1138.11,96.039C1138.11,82.706 1146.47,80 1159.81,80L1380,80C1393.33,80 1400,86.667 1400,100L1400,360L1400.19,394.925L100.566,394.925C87.233,394.925 80,400.124 80,386.79C80,373.457 85.535,376.41 98.868,376.41Z" style="fill:none;fill-rule:nonzero;stroke:rgb(242,167,0);stroke-width:10px;stroke-dasharray:20,14;"/>
+    <path d="M540,98C540,88.066 531.934,80 522,80L98,80C88.066,80 80,88.066 80,98L80,342C80,351.934 88.066,360 98,360L522,360C531.934,360 540,351.934 540,342L540,98Z" style="fill:none;stroke:rgb(24,138,57);stroke-width:10px;stroke-dasharray:20,14;"/>
+    <path d="M1120,98C1120,88.066 1111.93,80 1102,80L578,80C568.066,80 560,88.066 560,98L560,342C560,351.934 568.066,360 578,360L1102,360C1111.93,360 1120,351.934 1120,342L1120,98Z" style="fill:none;stroke:rgb(138,18,138);stroke-width:10px;stroke-dasharray:20,14;"/>
+    <path d="M315,136C315,127.169 307.831,120 299,120L131,120C122.169,120 115,127.169 115,136L115,304C115,312.831 122.169,320 131,320L299,320C307.831,320 315,312.831 315,304L315,136Z" style="fill:none;stroke:rgb(24,138,57);stroke-width:9px;"/>
+    <g transform="matrix(1,0,0,1,179.147,265.093)">
+        <text x="0px" y="0px" style="font-family:'ComicSansMS-Bold', 'Comic Sans MS', cursive;font-weight:700;font-size:160px;fill:rgb(24,138,57);">P</text>
+    </g>
+    <g transform="matrix(1,0,0,1,-7.92218,0)">
+        <path d="M525,136C525,127.169 517.831,120 509,120L361,120C352.169,120 345,127.169 345,136L345,304C345,312.831 352.169,320 361,320L509,320C517.831,320 525,312.831 525,304L525,136Z" style="fill:none;stroke:rgb(24,138,57);stroke-width:9px;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,384.248,258.868)">
+        <text x="0px" y="0px" style="font-family:'ComicSansMS-Bold', 'Comic Sans MS', cursive;font-weight:700;font-size:160px;fill:rgb(24,138,57);">I</text>
+    </g>
+    <path d="M760,136C760,127.169 752.831,120 744,120L606,120C597.169,120 590,127.169 590,136L590,304C590,312.831 597.169,320 606,320L744,320C752.831,320 760,312.831 760,304L760,136Z" style="fill:none;stroke:rgb(138,18,138);stroke-width:9px;"/>
+    <g transform="matrix(1,0,0,1,625,260)">
+        <text x="0px" y="0px" style="font-family:'ComicSansMS-Bold', 'Comic Sans MS', cursive;font-weight:700;font-size:160px;fill:rgb(138,18,138);">R</text>
+    </g>
+    <path d="M1100,136C1100,127.169 1092.83,120 1084,120L796,120C787.169,120 780,127.169 780,136L780,304C780,312.831 787.169,320 796,320L1084,320C1092.83,320 1100,312.831 1100,304L1100,136Z" style="fill:none;stroke:rgb(138,18,138);stroke-width:9px;"/>
+    <g transform="matrix(1,0,0,1,820,260)">
+        <text x="0px" y="0px" style="font-family:'ComicSansMS-Bold', 'Comic Sans MS', cursive;font-weight:700;font-size:160px;fill:rgb(138,18,138);">A</text>
+    </g>
+    <g transform="matrix(1,0,0,1,954.721,260)">
+        <text x="0px" y="0px" style="font-family:'ComicSansMS-Bold', 'Comic Sans MS', cursive;font-weight:700;font-size:160px;fill:rgb(138,18,138);">G</text>
+    </g>
+    <g transform="matrix(1,0,0,1,27.1618,0.565862)">
+        <path d="M1340,136C1340,127.169 1332.83,120 1324,120L1156,120C1147.17,120 1140,127.169 1140,136L1140,304C1140,312.831 1147.17,320 1156,320L1324,320C1332.83,320 1340,312.831 1340,304L1340,136Z" style="fill:none;stroke:rgb(242,167,0);stroke-width:9px;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,1214.24,276.41)">
+        <text x="0px" y="0px" style="font-family:'ComicSansMS-Bold', 'Comic Sans MS', cursive;font-weight:700;font-size:160px;fill:rgb(242,167,0);">E</text>
+    </g>
+</svg>

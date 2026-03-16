@@ -1,0 +1,255 @@
+{
+  "directed": true,
+  "multigraph": true,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "Albert Einstein"
+    },
+    {
+      "id": "the theory of relativity"
+    },
+    {
+      "id": "the development of quantum mechanics"
+    },
+    {
+      "id": "Marie Curie"
+    },
+    {
+      "id": "polonium"
+    },
+    {
+      "id": "radium"
+    },
+    {
+      "id": "radioactivity research"
+    },
+    {
+      "id": "The Manhattan Project"
+    },
+    {
+      "id": "a secret U.S. project"
+    },
+    {
+      "id": "World War II"
+    },
+    {
+      "id": "the atomic bomb"
+    },
+    {
+      "id": "Isaac Newton"
+    },
+    {
+      "id": "the laws of motion"
+    },
+    {
+      "id": "universal gravitation"
+    },
+    {
+      "id": "Galileo Galilei"
+    },
+    {
+      "id": "telescope"
+    },
+    {
+      "id": "heliocentrism"
+    },
+    {
+      "id": "Catholic Church"
+    },
+    {
+      "id": "Penicillin"
+    },
+    {
+      "id": "Alexander Fleming"
+    },
+    {
+      "id": "modern antibiotics"
+    },
+    {
+      "id": "Charles Darwin"
+    },
+    {
+      "id": "On the Origin of Species"
+    },
+    {
+      "id": "the theory of evolution through natural selection"
+    },
+    {
+      "id": "Nikola Tesla"
+    },
+    {
+      "id": "the development of alternating current (AC) electricity systems"
+    },
+    {
+      "id": "Ada Lovelace"
+    },
+    {
+      "id": "for her work on Charles Babbage's Analytical Engine"
+    },
+    {
+      "id": "Charles Babbage's Analytical Engine"
+    },
+    {
+      "id": "Apollo 11 mission in 1969"
+    },
+    {
+      "id": "NASA"
+    },
+    {
+      "id": "the first human landing on the Moon"
+    },
+    {
+      "id": "Manhattan Project"
+    },
+    {
+      "id": "quantum mechanics"
+    }
+  ],
+  "links": [
+    {
+      "relation": "developed",
+      "source": "Albert Einstein",
+      "target": "the theory of relativity",
+      "key": 0
+    },
+    {
+      "relation": "influenced",
+      "source": "Albert Einstein",
+      "target": "the development of quantum mechanics",
+      "key": 0
+    },
+    {
+      "relation": "discovered",
+      "source": "Marie Curie",
+      "target": "polonium",
+      "key": 0
+    },
+    {
+      "relation": "discovered",
+      "source": "Marie Curie",
+      "target": "radium",
+      "key": 0
+    },
+    {
+      "relation": "significantly advanced",
+      "source": "Marie Curie",
+      "target": "radioactivity research",
+      "key": 0
+    },
+    {
+      "relation": "is",
+      "source": "The Manhattan Project",
+      "target": "a secret U.S. project",
+      "key": 0
+    },
+    {
+      "relation": "occurred during",
+      "source": "The Manhattan Project",
+      "target": "World War II",
+      "key": 0
+    },
+    {
+      "relation": "developed",
+      "source": "The Manhattan Project",
+      "target": "the atomic bomb",
+      "key": 0
+    },
+    {
+      "relation": "formulated",
+      "source": "Isaac Newton",
+      "target": "the laws of motion",
+      "key": 0
+    },
+    {
+      "relation": "formulated",
+      "source": "Isaac Newton",
+      "target": "universal gravitation",
+      "key": 0
+    },
+    {
+      "relation": "improved",
+      "source": "Galileo Galilei",
+      "target": "telescope",
+      "key": 0
+    },
+    {
+      "relation": "supported",
+      "source": "Galileo Galilei",
+      "target": "heliocentrism",
+      "key": 0
+    },
+    {
+      "relation": "faced opposition from",
+      "source": "Galileo Galilei",
+      "target": "Catholic Church",
+      "key": 0
+    },
+    {
+      "relation": "discovered by",
+      "source": "Penicillin",
+      "target": "Alexander Fleming",
+      "key": 0
+    },
+    {
+      "relation": "marked the beginning of",
+      "source": "Penicillin",
+      "target": "modern antibiotics",
+      "key": 0
+    },
+    {
+      "relation": "published",
+      "source": "Charles Darwin",
+      "target": "On the Origin of Species",
+      "key": 0
+    },
+    {
+      "relation": "introduced",
+      "source": "Charles Darwin",
+      "target": "the theory of evolution through natural selection",
+      "key": 0
+    },
+    {
+      "relation": "contributed to",
+      "source": "Nikola Tesla",
+      "target": "the development of alternating current (AC) electricity systems",
+      "key": 0
+    },
+    {
+      "relation": "is considered the first computer programmer",
+      "source": "Ada Lovelace",
+      "target": "for her work on Charles Babbage's Analytical Engine",
+      "key": 0
+    },
+    {
+      "relation": "worked on",
+      "source": "Ada Lovelace",
+      "target": "Charles Babbage's Analytical Engine",
+      "key": 0
+    },
+    {
+      "relation": "led by",
+      "source": "Apollo 11 mission in 1969",
+      "target": "NASA",
+      "key": 0
+    },
+    {
+      "relation": "resulted in",
+      "source": "Apollo 11 mission in 1969",
+      "target": "the first human landing on the Moon",
+      "key": 0
+    },
+    {
+      "relation": "researched",
+      "source": "Manhattan Project",
+      "target": "the theory of relativity",
+      "key": 0
+    },
+    {
+      "relation": "researched",
+      "source": "Manhattan Project",
+      "target": "quantum mechanics",
+      "key": 0
+    }
+  ]
+}

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PIRAGE – Learning Guide & Advanced Patterns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pi:#188A39; --rag:#8A128A; --eval:#F2A700; --ink:#202020; --bg:#fff;
+}
+*{box-sizing:border-box}
+body{margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--ink); background:var(--bg);}
+header{max-width:1200px;margin:20px auto 10px auto;padding:0 16px; display:flex; align-items:center; gap:18px;}
+header img{height:80px; width:auto; display:block}
+h1{font-size:28px;margin:0}
+.tag{font-family:"Patrick Hand","Comic Sans MS","Arial Rounded MT",cursive; font-size:18px; color:#555}
+
+.container{max-width:1200px;margin:0 auto 80px auto; padding:0 16px;}
+
+/* Excalidraw-ish cards */
+.card{
+  background:#fff; border:4px dashed #333; border-radius:18px; padding:22px 24px; margin:14px 0;
+  box-shadow:0 1px 0 rgba(0,0,0,.05),0 12px 28px rgba(0,0,0,.08);
+}
+.card .title{font-family:"Patrick Hand","Comic Sans MS","Arial Rounded MT",cursive; font-size:40px; margin:0 0 6px 0}
+.card .subtitle{font-weight:600; opacity:.85; margin:0 0 12px 0}
+
+.pi{border-color:var(--pi)} .pi .title,.pi .subtitle strong{color:var(--pi)}
+.rag{border-color:var(--rag)} .rag .title,.rag .subtitle strong{color:var(--rag)}
+.eval{border-color:var(--eval)} .eval .title,.eval .subtitle strong{color:var(--eval)}
+
+.grid{display:grid; grid-template-columns:repeat(2,minmax(260px,1fr)); gap:16px}
+.grid3{display:grid; grid-template-columns:repeat(3,minmax(200px,1fr)); gap:14px}
+@media(max-width:980px){.grid,.grid3{grid-template-columns:1fr}}
+
+.badge{display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600; background:#f2f2f2; margin-right:8px}
+
+.kv{padding:10px 12px; border:2px dashed rgba(0,0,0,.12); border-radius:12px; background:linear-gradient(180deg,rgba(0,0,0,.018),rgba(0,0,0,.03));}
+.kv h4{margin:0 0 8px 0; font-size:16px}
+.kv p{margin:4px 0}
+
+.details{margin-top:10px}
+details{border:2px dashed rgba(0,0,0,.15); border-radius:12px; padding:10px 12px; background:#fff}
+details summary{cursor:pointer; font-weight:600}
+code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background:#f6f6f6; border:1px solid #eee; border-radius:6px; padding:2px 5px}
+
+/* Section dividers inspired by the yellow underlay */
+.section-divider{height:8px; background:repeating-linear-gradient(90deg,var(--eval) 0 28px, transparent 28px 42px); border-radius:10px; margin:28px 0}
+
+footer{max-width:1200px;margin:40px auto 60px auto;padding:0 16px;color:#666;font-size:13px}
+</style>
+</head>
+<body>
+
+<header>
+  <img src="pirage_logo_final.png" alt="PIRAGE logo"/>
+  <div>
+    <h1>PIRAGE – Learning Guide</h1>
+    <div class="tag">Parsing • Indexing • Retrieval • Augmented Generation • Evaluation</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="card pi">
+    <div class="title">P — Parse</div>
+    <p class="subtitle"><strong>Goal:</strong> turn messy inputs into clean, structured, attribution‑ready chunks with useful metadata.</p>
+    <div class="grid">
+      <div class="kv">
+        <h4>Inputs</h4>
+        <p>PDFs, Office docs, HTML, markdown, transcripts, images with text, tables, code, logs.</p>
+        <h4>Outputs</h4>
+        <p>Normalized text blocks + structure (sections, headings, tables, captions), source spans, and document‑level metadata (title, date, author, rights).</p>
+      </div>
+      <div class="kv">
+        <h4>Core techniques</h4>
+        <p>Robust text extraction; layout retention (headings, lists); table capture (CSV/HTML); footnote/figure caption binding; language detection; PII masking if needed.</p>
+        <p><strong>Chunking:</strong> hierarchical (by heading), semantic (by topic shifts), windowed overlap for continuity.</p>
+      </div>
+    </div>
+    <div class="details">
+      <details>
+        <summary>Metrics, pitfalls, and upgrades</summary>
+        <p><strong>Quality signals:</strong> extraction coverage (% chars), structural fidelity (headings/tables preserved), chunk cohesion (topic drift), and linkability back to source.</p>
+        <p><strong>Common pitfalls:</strong> “text soup” PDFs, duplicated headers/footers, broken hyphenation, images without OCR, tables flattened to prose.</p>
+        <p><strong>Advancements:</strong> layout‑aware OCR, image captioning for figures, auto‑citation span tagging, multilingual alignment, and lightweight taxonomy tagging during parse.</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="card pi">
+    <div class="title">I — Index</div>
+    <p class="subtitle"><strong>Goal:</strong> make the parsed corpus quickly and accurately searchable.</p>
+    <div class="grid">
+      <div class="kv">
+        <h4>Representations</h4>
+        <p>Hybrid index: BM25/keyword + dense vectors. Optional fielded metadata (source, date, author, topic), and graph links for entities/relations.</p>
+        <p>Embeddings refreshed when model or domain shifts; store vector norms and version tags.</p>
+      </div>
+      <div class="kv">
+        <h4>Indexing patterns</h4>
+        <p>Per‑chunk vectors with document pivots; synonyms and custom token filters; time‑decay scoring; access filters (role, tenant).</p>
+        <p>Cold/warm tiers: fast cache for hot content, bulk store for archive.</p>
+      </div>
+    </div>
+    <div class="details">
+      <details>
+        <summary>Metrics, pitfalls, and upgrades</summary>
+        <p><strong>Quality signals:</strong> recall@k for gold questions, index freshness (lag), and filter correctness.</p>
+        <p><strong>Pitfalls:</strong> over‑chunking → low signal; under‑chunking → context bloat; stale embeddings; inconsistent metadata.</p>
+        <p><strong>Advancements:</strong> cross‑encoder reranking labels baked into the index, hybrid tensor search, entity/relationship side‑index for graph‑hops.</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="card rag">
+    <div class="title">R — Retrieval</div>
+    <p class="subtitle"><strong>Goal:</strong> fetch a small, diverse, truly relevant context tailored to the intent of the task.</p>
+    <div class="grid">
+      <div class="kv">
+        <h4>Query understanding</h4>
+        <p>Intent detection, persona/scenario hints, HyDE (hypothetical answer) to widen recall, multi‑stage retrieval (keyword → vector → rerank).</p>
+        <p>Diversity control to avoid “five near‑duplicates.”</p>
+      </div>
+      <div class="kv">
+        <h4>Reranking & filters</h4>
+        <p>Cross‑encoder rerankers; recency or authority boosts; safety filters (domain allow‑lists) and policy checks; aggregation by section.</p>
+      </div>
+    </div>
+    <div class="details">
+      <details>
+        <summary>Metrics, pitfalls, and upgrades</summary>
+        <p><strong>Quality signals:</strong> precision@k, MRR, coverage of gold rationales, average token load.</p>
+        <p><strong>Pitfalls:</strong> over‑expanded queries, slotting irrelevant but popular docs, ignoring user constraints (time, jurisdiction).</p>
+        <p><strong>Advancements:</strong> conversational memory for follow‑ups, feedback‑aware reranking, and “retrieval agents” that try alternative strategies when confidence is low.</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="card rag">
+    <div class="title">AG — Augmented<br/>Generation</div>
+    <p class="subtitle"><strong>Goal:</strong> synthesize grounded, useful outputs by mixing retrieved evidence, tools, and reasoning.</p>
+    <div class="grid">
+      <div class="kv">
+        <h4>Composition</h4>
+        <p>Answer plans; section‑by‑section drafting; quote with citations; tables/figures regenerated from sources; role‑aware tone and format.</p>
+        <p>Function/tool calls for calculators, databases, search, and code execution when needed.</p>
+      </div>
+      <div class="kv">
+        <h4>Grounding & control</h4>
+        <p>Constrain to retrieved passages; cite aggressively; detect and flag low‑support claims; deduplicate evidence; maintain chain‑of‑reasoning logs (developer‑facing).</p>
+      </div>
+    </div>
+    <div class="details">
+      <details>
+        <summary>Metrics, pitfalls, and upgrades</summary>
+        <p><strong>Quality signals:</strong> faithfulness, task success, readability, latency, and cost per task.</p>
+        <p><strong>Pitfalls:</strong> citing irrelevant spans, over‑long outputs, leaking unsafe content, ignoring formatting requirements.</p>
+        <p><strong>Advancements:</strong> structured output schemas, self‑verification prompts, multi‑tool orchestration, and lightweight program synthesis for repeatable tasks.</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <div class="card eval">
+    <div class="title">E — Evaluation (continuous loop)</div>
+    <p class="subtitle"><strong>Goal:</strong> measure, compare, and improve every stage of PIRAGE with offline tests and online signals.</p>
+    <div class="grid3">
+      <div class="kv">
+        <h4>Offline tests</h4>
+        <p>Task suites with gold answers; adversarial questions; parse fidelity audits; retrieval relevance judging; red‑team safety cases.</p>
+      </div>
+      <div class="kv">
+        <h4>Online telemetry</h4>
+        <p>Implicit signals (clicks, dwell, edits), explicit ratings, human review samples, regression alarms, and per‑step traces for debuggability.</p>
+      </div>
+      <div class="kv">
+        <h4>Decisions</h4>
+        <p>AB tests for prompt/model/index changes; error buckets; routing thresholds (fallback to different strategy or model when confidence drops).</p>
+      </div>
+    </div>
+    <div class="details">
+      <details>
+        <summary>Metrics and continuous improvement</summary>
+        <p><strong>North‑stars:</strong> task success, faithfulness, time‑to‑answer, and cost. Secondary: coverage, citation quality, and safety conformance.</p>
+        <p><strong>Tuning loop:</strong> collect failures → label minimal fixes (parse rules, chunk size, retrieval query/rerank, prompt/tool plan) → re‑run suite → ship.</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <div class="card rag">
+    <div class="title">Agentic patterns & advancements</div>
+    <p class="subtitle"><strong>Where to add autonomy:</strong> let small “agents” own narrow responsibilities with clear stop conditions.</p>
+    <div class="grid">
+      <div class="kv">
+        <h4>Retrieval Agent</h4>
+        <p>Tries multiple strategies: keyword‑first, dense‑first, HyDE, domain filter variants. Chooses the best context by scoring diversity and citation confidence.</p>
+        <p><em>Stop condition:</em> precision@k and coverage thresholds met or budget exhausted.</p>
+      </div>
+      <div class="kv">
+        <h4>Planning Agent</h4>
+        <p>Drafts a step plan: fetch → analyze → call tools → write → cite → verify. Adapts plan for formats (email, report, slide outline).</p>
+        <p><em>Stop condition:</em> plan validated against constraints and length.</p>
+      </div>
+      <div class="kv">
+        <h4>Verification Agent</h4>
+        <p>Checks claims against retrieved spans, flags weak support, suggests extra retrieval hops, and enforces style/safety rules.</p>
+        <p><em>Stop condition:</em> no unsupported claims remain or max attempts reached.</p>
+      </div>
+      <div class="kv">
+        <h4>Routing/Cost Agent</h4>
+        <p>Selects models and tools by difficulty and budget; falls back to cheaper paths for easy queries and escalates for complex ones.</p>
+        <p><em>Stop condition:</em> latency/cost thresholds met.</p>
+      </div>
+    </div>
+    <div class="details">
+      <details>
+        <summary>Implementation checklist</summary>
+        <ul>
+          <li>Structured traces per step (inputs, outputs, tokens, latency, model)</li>
+          <li>Deterministic seeds for reproducible tests where possible</li>
+          <li>Error buckets with minimal fixes annotated to PIRAGE stage</li>
+          <li>Data retention policy and PII handling through the pipeline</li>
+          <li>Guardrails before/after generation (allow‑lists, templates, safety filters)</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Learning doc styled with dashed, hand‑drawn cards to mirror the PIRAGE logo. Colors: green (P/I), purple (R/AG), yellow (E).
+</footer>
+
+</body>
+</html>

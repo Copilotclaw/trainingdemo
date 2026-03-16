@@ -1,0 +1,8 @@
+langchain
+langchain-core
+langchain-openai
+langchain-community
+pandas
+networkx
+python-dotenv
+matplotlib

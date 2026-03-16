@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PIRAGE – Five Pillars</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --pi: #188A39;     /* green */
+  --rag: #8A128A;    /* purple */
+  --eval: #F2A700;   /* yellow */
+  --ink: #202020;
+  --bg: #fff;
+}
+
+body{
+  font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  margin: 0;
+  padding: 0;
+}
+
+.header{
+  max-width: 1200px;
+  margin: 24px auto 8px auto;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header img{
+  max-width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 2px 0 rgba(0,0,0,0.05)) drop-shadow(0 8px 18px rgba(0,0,0,0.08));
+}
+
+.sketch{
+  border: 4px dashed var(--ink);
+  border-radius: 18px;
+  padding: 18px 22px;
+  background: white;
+  box-shadow:
+    0 1px 0 rgba(0,0,0,0.05),
+    0 8px 20px rgba(0,0,0,0.06);
+  position: relative;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.sketch:hover{
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 0 rgba(0,0,0,0.08),
+    0 12px 28px rgba(0,0,0,0.10);
+}
+
+.sketch .label{
+  font-family: "Patrick Hand", "Comic Sans MS", "Arial Rounded MT", cursive;
+  font-size: 44px;
+  line-height: 1.05;
+  margin-bottom: 10px;
+  word-break: break-word;
+}
+
+/* Color ways */
+.pi   { border-color: var(--pi); }
+.pi .label, .pi strong{ color: var(--pi); }
+
+.rag  { border-color: var(--rag); }
+.rag .label, .rag strong{ color: var(--rag); }
+
+.eval { border-color: var(--eval); }
+.eval .label, .eval strong{ color: var(--eval); }
+
+/* Layout */
+.wrapper{
+  max-width: 1200px;
+  margin: 12px auto 48px auto;
+  padding: 0 16px 24px 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(200px, 1fr));
+  gap: 18px;
+}
+
+/* Vertically center content inside all pillars */
+.pillar, .pillar-eval{
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Evaluation spans full width below */
+.pillar-eval{
+  grid-column: 1 / -1;
+  padding: 22px 28px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(242,167,0,0.10), rgba(242,167,0,0.10));
+  border-width: 5px;
+}
+
+/* Content text */
+.pillar p, .pillar-eval p{
+  margin: 6px 0 0 0;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+footer{
+  max-width: 1200px;
+  margin: 24px auto 48px auto;
+  padding: 0 16px;
+  font-size: 13px;
+  color: #666;
+}
+
+/* Responsive tweaks */
+@media (max-width: 980px){
+  .wrapper{ grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px){
+  .wrapper{ grid-template-columns: 1fr; }
+  .pillar, .pillar-eval{ min-height: 0; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <img src="pirage_logo_final.png" alt="PIRAGE logo" />
+</header>
+
+<main class="wrapper">
+
+  <section class="sketch pi pillar">
+    <div class="label">P – Parse</div>
+    <p><strong>What it is:</strong> turn raw inputs (PDFs, docs, web pages, tables) into clean, machine-usable chunks.</p>
+    <p><strong>How:</strong> format detection, safe text extraction, structure recovery, light normalization, and metadata capture.</p>
+    <p><strong>Why:</strong> clean parsing prevents hallucinations downstream and raises recall.</p>
+  </section>
+
+  <section class="sketch pi pillar">
+    <div class="label">I – Index</div>
+    <p><strong>What it is:</strong> build searchable representations for fast, accurate look‑ups.</p>
+    <p><strong>How:</strong> hybrid BM25 + vector embeddings, fielded metadata, time/role filters, and periodic refresh.</p>
+    <p><strong>Why:</strong> a thoughtful index trades brute force for relevance and speed.</p>
+  </section>
+
+  <section class="sketch rag pillar">
+    <div class="label">R – Retrieval</div>
+    <p><strong>What it is:</strong> find the few most useful passages for a given task and user intent.</p>
+    <p><strong>How:</strong> query rewriting/expansion (HyDE), reranking, diversity control, and guardrails for scope.</p>
+    <p><strong>Why:</strong> high‑quality retrieval narrows the model’s context to what truly matters.</p>
+  </section>
+
+  <section class="sketch rag pillar">
+    <div class="label">AG – Augmented<br/>Generation</div>
+    <p><strong>What it is:</strong> compose answers by blending retrieved facts, tools, and reasoning.</p>
+    <p><strong>How:</strong> grounded prompts, function/tool calls, multi‑step plans, and traceable citations.</p>
+    <p><strong>Why:</strong> makes outputs useful, verifiable, and action‑ready.</p>
+  </section>
+
+  <section class="sketch eval pillar-eval">
+    <div class="label">E – Evaluation</div>
+    <p><strong>What it is:</strong> a continuous quality loop that spans the whole pipeline.</p>
+    <p><strong>How:</strong> offline tests and online signals: task success, answerability, faithfulness, latency, cost, and safety. Run AB tests, spot‑check transcripts, compare versions, and feed regressions back into P, I, R, and AG.</p>
+    <p><strong>Why:</strong> without measurement, improvement is guesswork. With it, PIRAG<span style="letter-spacing:0.04em;">E</span> learns over time.</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>Style: “Excalidraw‑ish” cards with dashed, rounded borders and a handwritten title font. Colors mirror the logo: green for <em>P/I</em>, purple for <em>R/AG</em>, and yellow for <em>E</em> spanning the width.</div>
+</footer>
+
+</body>
+</html>
