@@ -3,307 +3,1086 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Advanced RAG Techniques with Local Models — Explainer</title>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.min.js"></script>
+<title>Advanced RAG Techniques — Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script>hljs.highlightAll();</script>
 <style>
-  :root {
-    --bg: #faf9f6;
-    --surface: #ffffff;
-    --ink: #1a1a2e;
-    --muted: #6b7280;
-    --accent: #7c3aed;
-    --accent2: #0ea5e9;
-    --accent3: #10b981;
-    --accent4: #f59e0b;
-    --accent5: #ef4444;
-    --border: #e5e7eb;
-    --code-bg: #1e1e2e;
-    --code-fg: #cdd6f4;
-    --c-yellow: #fef9c3;
-    --c-blue: #dbeafe;
-    --c-green: #dcfce7;
-    --c-pink: #fce7f3;
-    --c-purple: #ede9fe;
-    --c-orange: #ffedd5;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); line-height: 1.7; }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #21262d;
+  --border: #30363d;
+  --text: #c9d1d9;
+  --text-dim: #8b949e;
+  --accent: #58a6ff;
+  --accent2: #3fb950;
+  --accent3: #d2a8ff;
+  --accent4: #ffa657;
+  --accent5: #f78166;
+  --accent6: #56d364;
+  --yellow: #e3b341;
+  --hero-grad: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1c2128 100%);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 16px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1,h2,h3,h4 { color: #e6edf3; }
 
-  nav {
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(250,249,246,0.95); backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--border);
-    padding: 0.75rem 2rem; display: flex; align-items: center; gap: 2rem;
-  }
-  nav .brand { font-family: 'Caveat', cursive; font-size: 1.4rem; font-weight: 700; color: var(--accent); }
-  .btn {
-    display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.4rem 1rem; border-radius: 8px;
-    font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
-    text-decoration: none !important;
-  }
-  .btn-primary { background: var(--accent); color: white; }
-  .btn-primary:hover { background: #6d28d9; transform: translateY(-1px); }
-  .btn-outline { border: 2px solid var(--ink); background: white; color: var(--ink); }
-  .btn-outline:hover { background: var(--ink); color: white; }
-  .btn-colab { background: #f9ab00; color: #1a1a2e; }
-  .btn-colab:hover { background: #e09800; transform: translateY(-1px); }
+nav {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(13,17,23,0.95); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 2rem;
+  display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+}
+.nav-brand { font-weight: 700; font-size: 1rem; color: var(--accent); white-space: nowrap; }
+.nav-links { display: flex; gap: 1rem; flex-wrap: wrap; }
+.nav-links a {
+  color: var(--text-dim); font-size: 0.82rem; font-weight: 500;
+  padding: 0.25rem 0.6rem; border-radius: 6px; transition: all 0.15s;
+}
+.nav-links a:hover { color: var(--text); background: var(--surface2); text-decoration: none; }
 
-  .hero {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    color: white; padding: 5rem 2rem 3rem; text-align: center; position: relative; overflow: hidden;
-  }
-  .hero-emoji { font-size: 4rem; margin-bottom: 1rem; }
-  .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 600; margin-bottom: 0.5rem; }
-  .hero h1 span { color: #a78bfa; }
-  .hero .tagline { font-size: 1.15rem; color: rgba(255,255,255,0.75); max-width: 600px; margin: 0 auto 2rem; }
-  .hero-pills { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
-  .pill {
-    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-    color: white; padding: 0.35rem 0.9rem; border-radius: 9999px; font-size: 0.82rem;
-  }
-  .hero-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.hero {
+  background: var(--hero-grad);
+  padding: 5rem 2rem 4rem; text-align: center;
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(88,166,255,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-emoji { font-size: 3.5rem; margin-bottom: 1rem; display: block; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; margin-bottom: 0.75rem; }
+.hero h1 span { color: var(--accent); }
+.hero .sub { font-size: 1.1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto 2rem; line-height: 1.6; }
+.tags { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
+.tag {
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 0.3rem 0.8rem; border-radius: 9999px; font-size: 0.78rem; color: var(--text-dim);
+}
+.hero-btns { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.55rem 1.2rem; border-radius: 8px; font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; text-decoration: none !important;
+}
+.btn-blue { background: var(--accent); color: #0d1117; }
+.btn-blue:hover { background: #79b8ff; }
+.btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-colab { background: #f9ab00; color: #1a1a2e; }
+.btn-colab:hover { background: #ffcc02; }
 
-  .container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+.container { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
 
-  .section { padding: 3rem 0; }
-  .section-title {
-    font-family: 'Caveat', cursive; font-size: 2rem; font-weight: 700;
-    margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;
-  }
+.toc-section { padding: 3rem 0; border-bottom: 1px solid var(--border); }
+.toc-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem;
+}
+.toc-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.25rem;
+  display: flex; align-items: flex-start; gap: 1rem;
+  transition: border-color 0.15s, transform 0.15s;
+  text-decoration: none !important;
+}
+.toc-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.toc-num {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.9rem; flex-shrink: 0; color: #0d1117;
+}
+.toc-info h4 { color: #e6edf3; font-size: 0.95rem; margin-bottom: 0.25rem; }
+.toc-info p { color: var(--text-dim); font-size: 0.8rem; line-height: 1.4; }
 
-  .why-box {
-    background: var(--c-blue); border: 2.5px solid var(--ink);
-    border-radius: 16px; padding: 2rem; position: relative;
-  }
-  .why-box p { font-size: 1.05rem; line-height: 1.8; }
+.technique-section {
+  padding: 4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.section-header {
+  display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;
+}
+.section-num {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 1.1rem; flex-shrink: 0; color: #0d1117;
+}
+.section-header h2 { font-size: 1.8rem; font-weight: 700; color: #e6edf3; }
+.section-header .badge {
+  margin-left: auto; padding: 0.3rem 0.8rem; border-radius: 9999px;
+  font-size: 0.75rem; font-weight: 600; white-space: nowrap;
+}
 
-  .learn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
-  .learn-item {
-    background: white; border: 2px solid var(--ink); border-radius: 12px;
-    padding: 1rem; text-align: center; font-size: 0.9rem; font-weight: 500;
-    box-shadow: 3px 3px 0 var(--ink);
-  }
-  .learn-item::before { content: "✓ "; color: var(--accent3); font-weight: 700; }
+.callout {
+  border-radius: 10px; padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0; border-left: 4px solid;
+}
+.callout-problem { background: rgba(247,129,102,0.08); border-color: var(--accent5); }
+.callout-problem strong { color: var(--accent5); }
+.callout-how { background: rgba(88,166,255,0.08); border-color: var(--accent); }
+.callout-how strong { color: var(--accent); }
+.callout-tip { background: rgba(63,185,80,0.08); border-color: var(--accent2); }
+.callout-tip strong { color: var(--accent2); }
+.callout-warn { background: rgba(255,166,87,0.08); border-color: var(--accent4); }
+.callout-warn strong { color: var(--accent4); }
 
-  .steps-list { display: flex; flex-direction: column; gap: 1.5rem; }
-  .step-card {
-    display: grid; grid-template-columns: 60px 1fr; gap: 1.5rem;
-    border: 2.5px solid var(--ink); border-radius: 16px; padding: 1.5rem;
-    position: relative; overflow: hidden;
-  }
-  .step-card.yellow { background: var(--c-yellow); }
-  .step-card.blue { background: var(--c-blue); }
-  .step-card.green { background: var(--c-green); }
-  .step-card.pink { background: var(--c-pink); }
-  .step-card.purple { background: var(--c-purple); }
-  .step-card.orange { background: var(--c-orange); }
-  .step-num {
-    width: 52px; height: 52px; background: var(--ink); color: white;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-family: 'Caveat', cursive; font-size: 1.6rem; font-weight: 700; flex-shrink: 0;
-  }
-  .step-card h3 { font-size: 1.2rem; margin-bottom: 0.4rem; }
-  .step-card p { color: #374151; font-size: 0.95rem; }
+.diagram {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1.5rem; margin: 1.5rem 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+  color: var(--text-dim); line-height: 1.6; overflow-x: auto; white-space: pre;
+}
 
-  .concepts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
-  .concept-card {
-    background: white; border: 2px solid var(--ink); border-radius: 12px;
-    padding: 1.25rem; box-shadow: 3px 3px 0 #d1d5db;
-  }
-  .concept-card .term {
-    font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
-    font-weight: 600; color: var(--accent); margin-bottom: 0.4rem;
-  }
-  .concept-card .def { font-size: 0.88rem; color: var(--muted); }
+pre {
+  margin: 1.5rem 0; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--border);
+}
+pre code.hljs { padding: 1.5rem; font-size: 0.83rem; line-height: 1.6; font-family: 'JetBrains Mono', monospace; }
+.code-label {
+  background: var(--surface2); border: 1px solid var(--border); border-bottom: none;
+  border-radius: 10px 10px 0 0; padding: 0.5rem 1rem;
+  font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.code-label::before { content: "\25CF  \25CF  \25CF"; color: #444; font-size: 0.7rem; }
+.code-label + pre { margin-top: 0; border-top: none; border-radius: 0 0 10px 10px; }
 
-  .meta-bar {
-    display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center;
-    background: white; border: 2px solid var(--border); border-radius: 16px;
-    padding: 1.5rem; margin: 2rem 0;
-  }
-  .meta-item { text-align: center; }
-  .meta-item .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-  .meta-item .value { font-size: 1.1rem; font-weight: 600; margin-top: 0.2rem; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+@media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1.25rem;
+}
+.card h4 { font-size: 0.9rem; margin-bottom: 0.6rem; }
+.card ul { list-style: none; }
+.card ul li { color: var(--text-dim); font-size: 0.85rem; padding: 0.2rem 0; }
+.card ul li::before { content: "\2192 "; color: var(--accent4); }
 
-  .prereqs-list { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-  .prereq-tag {
-    background: var(--c-orange); border: 2px solid var(--ink);
-    border-radius: 8px; padding: 0.3rem 0.75rem; font-size: 0.85rem; font-weight: 500;
-  }
+.comp-table { width: 100%; border-collapse: collapse; margin: 2rem 0; font-size: 0.84rem; }
+.comp-table th {
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 0.75rem 1rem; text-align: left; font-weight: 600; color: #e6edf3;
+}
+.comp-table td {
+  border: 1px solid var(--border); padding: 0.65rem 1rem;
+  color: var(--text-dim); vertical-align: top; line-height: 1.5;
+}
+.comp-table tr:hover td { background: var(--surface); }
+.badge-pill {
+  display: inline-block; padding: 0.15rem 0.55rem; border-radius: 9999px;
+  font-size: 0.72rem; font-weight: 600;
+}
+.bp-fast { background: rgba(63,185,80,0.2); color: #3fb950; }
+.bp-med { background: rgba(255,166,87,0.2); color: #ffa657; }
+.bp-slow { background: rgba(247,129,102,0.2); color: #f78166; }
 
-  .cta-box {
-    background: linear-gradient(135deg, #7c3aed, #0ea5e9);
-    border-radius: 20px; padding: 3rem 2rem; text-align: center; color: white; margin: 3rem 0;
-  }
-  .cta-box h2 { font-family: 'Caveat', cursive; font-size: 2rem; margin-bottom: 0.5rem; }
-  .cta-box p { opacity: 0.85; margin-bottom: 1.5rem; }
-  .cta-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+footer {
+  padding: 3rem 2rem; text-align: center; color: var(--text-dim);
+  font-size: 0.85rem; border-top: 1px solid var(--border);
+}
 
-  footer {
-    border-top: 1px solid var(--border); padding: 2rem; text-align: center;
-    color: var(--muted); font-size: 0.85rem;
-  }
-  footer a { color: var(--muted); }
+p { margin: 0.75rem 0; }
+h3 { font-size: 1.1rem; margin: 1.75rem 0 0.6rem; color: #e6edf3; }
+ul.prose, ol.prose { margin: 0.75rem 0 0.75rem 1.5rem; }
+ul.prose li, ol.prose li { margin: 0.35rem 0; color: var(--text-dim); font-size: 0.95rem; }
+strong { color: #e6edf3; }
+code { background: var(--surface2); padding: 0.1rem 0.35rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: var(--accent3); }
+pre code { background: none; padding: 0; }
 </style>
 </head>
 <body>
 
 <nav>
-  <span class="brand">🦃 trainingdemo</span>
-  <div style="margin-left:auto;display:flex;gap:0.75rem">
-    <a href="https://github.com/Copilotclaw/trainingdemo" class="btn btn-outline">GitHub</a>
-    <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/rag-techniques-ollama.ipynb" target="_blank" class="btn btn-colab">🚀 Open in Colab</a>
+  <span class="nav-brand">&#128269; RAG Techniques</span>
+  <div class="nav-links">
+    <a href="#dense">Dense Embedding</a>
+    <a href="#bm25">BM25</a>
+    <a href="#hyde">HyDE</a>
+    <a href="#multiquery">MultiQuery</a>
+    <a href="#stepback">Step-Back</a>
+    <a href="#rerank">Re-Ranking</a>
+    <a href="#comparison">Comparison</a>
   </div>
 </nav>
 
-<section class="hero">
-  <div class="hero-emoji">🔍</div>
-  <h1>Advanced RAG Techniques with Local <span>Models</span></h1>
-  <p class="tagline">Master six powerful retrieval techniques that combine semantic search with local LLMs for intelligent document understanding.</p>
-  <div class="hero-pills">
-    <span class="pill">⏱ ~45 minutes</span>
-    <span class="pill">📊 Intermediate</span>
-    <span class="pill">📓 Jupyter Notebook</span>
+<div class="hero">
+  <span class="hero-emoji">&#128269;</span>
+  <h1>Advanced <span>RAG</span> Techniques</h1>
+  <p class="sub">A deep-dive into six retrieval strategies &mdash; the problems they solve, how they work under the hood, and production-ready Python implementations.</p>
+  <div class="tags">
+    <span class="tag">Dense Embeddings</span>
+    <span class="tag">BM25</span>
+    <span class="tag">HyDE</span>
+    <span class="tag">MultiQuery</span>
+    <span class="tag">Step-Back Prompting</span>
+    <span class="tag">Cross-Encoder Re-Ranking</span>
+    <span class="tag">Ollama &middot; FAISS &middot; sentence-transformers</span>
   </div>
-  <div class="hero-actions">
-    <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/rag-techniques-ollama.ipynb" target="_blank" class="btn btn-colab">🚀 Open in Colab</a>
-    <a href="https://github.com/Copilotclaw/trainingdemo" class="btn btn-outline" style="color:white;border-color:rgba(255,255,255,0.4)">📁 View Source</a>
+  <div class="hero-btns">
+    <a class="btn btn-colab" href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/rag-techniques-ollama.ipynb" target="_blank">&#9654; Open in Colab</a>
+    <a class="btn btn-ghost" href="rag-techniques-ollama.ipynb">&#128211; Notebook</a>
   </div>
-</section>
+</div>
 
-<main class="container">
+<div class="toc-section">
+<div class="container">
+  <h2 style="font-size:1.5rem; margin-bottom:0.5rem;">What you'll learn</h2>
+  <p style="color:var(--text-dim)">Six independent techniques, each solving a different retrieval weakness.</p>
+  <div class="toc-grid">
+    <a class="toc-card" href="#dense">
+      <div class="toc-num" style="background:#58a6ff">1</div>
+      <div class="toc-info"><h4>Dense Embedding</h4><p>Semantic search with bi-encoders and FAISS vector index</p></div>
+    </a>
+    <a class="toc-card" href="#bm25">
+      <div class="toc-num" style="background:#ffa657">2</div>
+      <div class="toc-info"><h4>BM25</h4><p>Classical sparse keyword retrieval &mdash; fast, interpretable, no GPU</p></div>
+    </a>
+    <a class="toc-card" href="#hyde">
+      <div class="toc-num" style="background:#d2a8ff">3</div>
+      <div class="toc-info"><h4>HyDE</h4><p>Generate a hypothetical answer and search with its embedding</p></div>
+    </a>
+    <a class="toc-card" href="#multiquery">
+      <div class="toc-num" style="background:#56d364">4</div>
+      <div class="toc-info"><h4>MultiQuery</h4><p>Expand one query into many variants to boost recall</p></div>
+    </a>
+    <a class="toc-card" href="#stepback">
+      <div class="toc-num" style="background:#e3b341">5</div>
+      <div class="toc-info"><h4>Step-Back Prompting</h4><p>Retrieve on an abstracted version of the query for richer context</p></div>
+    </a>
+    <a class="toc-card" href="#rerank">
+      <div class="toc-num" style="background:#f78166">6</div>
+      <div class="toc-info"><h4>Cross-Encoder Re-Ranking</h4><p>Two-stage pipeline: fast retrieval + accurate joint scoring</p></div>
+    </a>
+  </div>
+</div>
+</div>
 
-  <!-- Meta bar -->
-  <div class="meta-bar">
-    <div class="meta-item"><div class="label">Time</div><div class="value">⏱ ~45 minutes</div></div>
-    <div class="meta-item"><div class="label">Difficulty</div><div class="value">Intermediate</div></div>
-    <div class="meta-item"><div class="label">Platform</div><div class="value">Google Colab</div></div>
-    <div class="meta-item"><div class="label">Cost</div><div class="value">Free 🎉</div></div>
+<!-- 1. DENSE EMBEDDING -->
+<div class="technique-section" id="dense">
+<div class="container">
+  <div class="section-header">
+    <div class="section-num" style="background:#58a6ff">1</div>
+    <div>
+      <h2>Dense Embedding Retrieval</h2>
+      <p style="color:var(--text-dim);font-size:0.9rem">Semantic search with bi-encoders + FAISS</p>
+    </div>
+    <span class="badge" style="background:rgba(88,166,255,0.15);color:#58a6ff;border:1px solid rgba(88,166,255,0.3)">Baseline technique</span>
   </div>
 
-  <!-- Why -->
-  <div class="section">
-    <h2 class="section-title">💡 Why this matters</h2>
-    <div class="why-box">
-      <p>RAG systems power modern AI assistants and search engines by combining retrieval accuracy with language model reasoning. These techniques help AI systems access up-to-date information and domain-specific knowledge without retraining models.</p>
+  <div class="callout callout-problem">
+    <strong>&#128680; Problem it solves</strong>
+    <p>Traditional keyword search fails when the user's phrasing doesn't match the document's wording. Ask "How do LLMs avoid hallucinations?" and you miss documents that say "grounding language models with external knowledge" &mdash; same concept, completely different words.</p>
+    <p>Dense embeddings solve this by converting text into vectors where <em>semantic proximity = vector proximity</em>. Two sentences with the same meaning cluster close together in vector space even if they share zero tokens.</p>
+  </div>
+
+  <h3>How it works</h3>
+  <p>A <strong>bi-encoder</strong> (e.g. <code>all-MiniLM-L6-v2</code>) encodes each document into a fixed-size vector at index time. At query time, the query is encoded with the same model. The similarity score is the <strong>cosine similarity</strong> &mdash; the dot product of L2-normalised vectors.</p>
+  <p>FAISS (<em>Facebook AI Similarity Search</em>) makes retrieval fast. <code>IndexFlatIP</code> does exact inner-product search. For millions of vectors, approximate variants (IVF, HNSW) trade a small accuracy loss for dramatically lower latency.</p>
+
+  <div class="diagram">Index time (once):
+
+  doc_1: "RAG fetches relevant docs..."    -[encoder]-&gt;  [0.12, -0.34, 0.89, ...]  -&gt;  FAISS
+  doc_2: "BM25 uses term frequency..."    -[encoder]-&gt;  [0.55,  0.21, 0.03, ...]  -&gt;  FAISS
+  doc_3: "Dense embeddings map text..."  -[encoder]-&gt;  [-0.11, 0.78, 0.44, ...]  -&gt;  FAISS
+
+Query time:
+
+  query: "How does semantic retrieval work?"
+           -[same encoder]-&gt;  [0.08, -0.29, 0.91, ...]
+                                       |
+                      cosine similarity against all indexed vectors
+                                       |
+                              top-k results
+                              score 0.94 -&gt; doc_3  (closest in vector space)
+                              score 0.87 -&gt; doc_1
+                              score 0.72 -&gt; doc_7</div>
+
+  <div class="code-label">dense_retrieval.py</div>
+<pre><code class="language-python">import numpy as np
+from sentence_transformers import SentenceTransformer
+import faiss
+
+# ── 1. Load a lightweight bi-encoder ─────────────────────────────────
+# all-MiniLM-L6-v2: 22M params, 384-dim output, ~30ms per sentence on CPU
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
+
+# ── 2. Your document corpus ───────────────────────────────────────────
+CORPUS = [
+    "Retrieval-Augmented Generation (RAG) combines a retrieval system with a language model.",
+    "Dense embeddings map text into a high-dimensional vector space.",
+    "FAISS is a library for efficient similarity search over dense vectors.",
+    "BM25 is a bag-of-words ranking function based on TF-IDF.",
+    "HyDE asks the LLM to write a hypothetical answer and embeds that instead of the query.",
+]
+
+# ── 3. Encode all documents at index time (do this ONCE) ──────────────
+# normalize_embeddings=True  =>  dot product == cosine similarity
+doc_vectors = embedder.encode(
+    CORPUS,
+    normalize_embeddings=True,
+    show_progress_bar=True
+)
+# doc_vectors.shape == (5, 384)
+
+dim = doc_vectors.shape[1]                 # 384 for all-MiniLM-L6-v2
+index = faiss.IndexFlatIP(dim)             # Inner Product on normalised vecs = cosine
+index.add(doc_vectors.astype(np.float32))  # FAISS requires float32
+print(f"Index contains {index.ntotal} vectors")
+
+# ── 4. Search ─────────────────────────────────────────────────────────
+def dense_search(query: str, k: int = 3) -&gt; list[tuple[float, str]]:
+    """Encode query, find top-k most similar documents."""
+    q_vec = embedder.encode([query], normalize_embeddings=True)  # (1, 384)
+    scores, indices = index.search(q_vec.astype(np.float32), k)
+    return [(float(scores[0][i]), CORPUS[indices[0][i]]) for i in range(k)]
+
+# Example
+results = dense_search("How does semantic similarity search work?", k=3)
+for score, doc in results:
+    print(f"  [{score:.3f}]  {doc[:80]}")</code></pre>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>&#10003; When to use</h4>
+      <ul>
+        <li>Queries use natural language, not keywords</li>
+        <li>Documents and queries may use different vocabulary</li>
+        <li>Cross-lingual retrieval (multilingual models)</li>
+        <li>Semantic similarity matters more than exact match</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>&#9888; Limitations</h4>
+      <ul>
+        <li>Requires inference (slower than BM25)</li>
+        <li>Can miss exact rare terms (product codes, names)</li>
+        <li>Embedding quality varies by domain</li>
+        <li>Hard to debug: why was this doc retrieved?</li>
+      </ul>
     </div>
   </div>
+</div>
+</div>
 
-  <!-- What you'll learn -->
-  <div class="section">
-    <h2 class="section-title">🎯 What you'll learn</h2>
-    <div class="learn-grid">
-      <div class="learn-item">Dense embedding retrieval using FAISS for semantic similarity</div>
-<div class="learn-item">Classic BM25 keyword-based document ranking</div>
-<div class="learn-item">Advanced techniques like HyDE and MultiQuery for better recall</div>
-<div class="learn-item">Cross-encoder re-ranking for improved result quality</div>
+<!-- 2. BM25 -->
+<div class="technique-section" id="bm25">
+<div class="container">
+  <div class="section-header">
+    <div class="section-num" style="background:#ffa657">2</div>
+    <div>
+      <h2>BM25 &mdash; Sparse Keyword Retrieval</h2>
+      <p style="color:var(--text-dim);font-size:0.9rem">Probabilistic TF-IDF ranking, no neural network required</p>
+    </div>
+    <span class="badge" style="background:rgba(255,166,87,0.15);color:#ffa657;border:1px solid rgba(255,166,87,0.3)">Fast &middot; Interpretable</span>
+  </div>
+
+  <div class="callout callout-problem">
+    <strong>&#128680; Problem it solves</strong>
+    <p>Dense embedding models compress meaning into fixed-size vectors. This compression can lose rare, specific tokens &mdash; product codes, medical abbreviations, version numbers, proper nouns. Ask "Does this support CUDA 12.4?" and a general-purpose embedding model may surface GPU acceleration docs, missing the exact version match.</p>
+    <p>BM25 matches <em>exact tokens</em> with statistically-motivated weights. It remains state-of-the-art for keyword-heavy retrieval and is the backbone of most enterprise search engines (Elasticsearch, OpenSearch, Solr all default to BM25).</p>
+  </div>
+
+  <h3>The BM25 formula</h3>
+  <p>BM25 scores a document by summing per-term scores across all query terms present in the document:</p>
+
+  <div class="diagram">BM25 score for query term t in document d:
+
+  score(t, d) = IDF(t)  x  tf(t,d) * (k1 + 1)
+                             ----------------------------
+                             tf(t,d) + k1*(1 - b + b*|d|/avgdl)
+
+  IDF(t)   = log[ (N - df(t) + 0.5) / (df(t) + 0.5) + 1 ]
+  tf(t,d)  = count of term t in document d
+  |d|      = length of document d in tokens
+  avgdl    = average document length across entire corpus
+  N        = total number of documents
+  df(t)    = number of documents containing term t
+  k1 = 1.5   controls term-frequency saturation (diminishing returns)
+  b  = 0.75  controls length normalisation strength
+
+Final score = sum of score(t, d) for every query term t</div>
+
+  <div class="code-label">bm25_retrieval.py</div>
+<pre><code class="language-python">from rank_bm25 import BM25Okapi
+import re
+
+CORPUS = [
+    "Retrieval-Augmented Generation (RAG) combines a retrieval system with a language model.",
+    "BM25 is a bag-of-words ranking function based on the probabilistic model of information retrieval.",
+    "Dense embeddings map text into a high-dimensional vector space.",
+    "FAISS (Facebook AI Similarity Search) is a library for efficient similarity search over dense vectors.",
+    "HyDE asks the LLM to write a hypothetical answer, embeds it, and uses that vector for retrieval.",
+    "Cross-encoder re-rankers score each (query, document) pair jointly using full attention.",
+]
+
+# ── 1. Tokenise every document ────────────────────────────────────────
+# Keep it simple: lowercase + remove punctuation + split on whitespace.
+# In production, consider nltk.word_tokenize or spaCy for better stemming.
+def tokenise(text: str) -&gt; list[str]:
+    return re.sub(r"[^\w\s]", "", text.lower()).split()
+
+tokenised_corpus = [tokenise(doc) for doc in CORPUS]
+
+# ── 2. Build the BM25 index ───────────────────────────────────────────
+# BM25Okapi is the standard variant: pure Python, no GPU required,
+# index builds in milliseconds even for millions of documents.
+bm25 = BM25Okapi(tokenised_corpus, k1=1.5, b=0.75)
+
+# ── 3. Query ─────────────────────────────────────────────────────────
+def bm25_search(query: str, k: int = 3) -&gt; list[tuple[float, str]]:
+    """Tokenise query and return top-k (score, document) pairs."""
+    q_tokens = tokenise(query)
+    scores = bm25.get_scores(q_tokens)  # one score per document
+
+    ranked = sorted(
+        zip(scores, CORPUS),
+        key=lambda x: x[0],
+        reverse=True
+    )
+    return [(float(s), d) for s, d in ranked[:k]]
+
+# Exact keyword match: BM25 wins here
+results = bm25_search("BM25 term frequency inverse document frequency ranking", k=3)
+for score, doc in results:
+    print(f"  [{score:.3f}]  {doc[:80]}")
+
+# Note: BM25 scores 0 for semantic paraphrases with no token overlap.
+# "How does sparse retrieval compute relevance?" scores 0 because none
+# of those tokens appear literally in the BM25 document above.</code></pre>
+
+  <div class="callout callout-tip">
+    <strong>&#128161; Hybrid Search with Reciprocal Rank Fusion</strong>
+    <p>The best production systems run <em>both</em> BM25 and dense retrieval and merge with RRF. For each document, the fused score is <code>1/(rank_bm25 + 60) + 1/(rank_dense + 60)</code>. Adding ranks (rather than raw scores) avoids scale mismatch and consistently outperforms either method alone. The constant 60 dampens the impact of very low ranks.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>&#10003; When to use</h4>
+      <ul>
+        <li>Domain jargon, product codes, version strings</li>
+        <li>Expert users who know the exact terminology</li>
+        <li>No GPU available &mdash; pure CPU and RAM</li>
+        <li>Need interpretability (see which tokens matched)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>&#9888; Limitations</h4>
+      <ul>
+        <li>Zero score when no query tokens appear in doc</li>
+        <li>Fails on paraphrases and synonyms</li>
+        <li>Sensitive to tokenisation quality</li>
+        <li>Language-specific: does not handle multilingual</li>
+      </ul>
     </div>
   </div>
-
-  <!-- Prerequisites -->
-  <div class="section">
-  <h2 class="section-title">📋 Prerequisites</h2>
-  <div class="prereqs-list"><span class="prereq-tag">Basic Python programming knowledge</span>
-<span class="prereq-tag">Understanding of machine learning concepts</span></div>
+</div>
 </div>
 
-  <!-- Steps -->
-  <div class="section">
-    <h2 class="section-title">🗺️ What we do — step by step</h2>
-    <div class="steps-list">
-      <div class="step-card yellow">
-  <div class="step-num">1</div>
-  <div>
-    <h3>Environment Setup</h3>
-    <p>Install all necessary dependencies including sentence-transformers, FAISS, BM25, and configure Ollama with the Llama 3.2 model for local processing.</p>
+<!-- 3. HYDE -->
+<div class="technique-section" id="hyde">
+<div class="container">
+  <div class="section-header">
+    <div class="section-num" style="background:#d2a8ff">3</div>
+    <div>
+      <h2>HyDE &mdash; Hypothetical Document Embeddings</h2>
+      <p style="color:var(--text-dim);font-size:0.9rem">Bridge the query-document vocabulary gap with generative search</p>
+    </div>
+    <span class="badge" style="background:rgba(210,168,255,0.15);color:#d2a8ff;border:1px solid rgba(210,168,255,0.3)">LLM-augmented</span>
   </div>
-</div>
-<div class="step-card blue">
-  <div class="step-num">2</div>
-  <div>
-    <h3>Model Loading & Corpus Preparation</h3>
-    <p>Load embedding models, cross-encoders, and prepare a sample corpus of technical documents about RAG techniques for experimentation.</p>
+
+  <div class="callout callout-problem">
+    <strong>&#128680; Problem it solves</strong>
+    <p>Users write <em>questions</em>. Your corpus contains <em>answers</em>. These live in different regions of embedding space &mdash; even with a good encoder. "What algorithm finds nearest neighbours in high dimensions?" embeds quite differently from "FAISS supports exact and approximate nearest-neighbour algorithms and scales to billions of vectors."</p>
+    <p>HyDE (Gao et al., 2022) bridges this query-document gap by having an LLM <em>hallucinate</em> a plausible answer, then embedding the hallucinated answer instead of the raw question. The generated passage lives in the same document-language space as your corpus &mdash; dramatically improving retrieval recall even when the LLM's answer contains factual errors.</p>
   </div>
-</div>
-<div class="step-card green">
-  <div class="step-num">3</div>
-  <div>
-    <h3>Dense Embedding Retrieval</h3>
-    <p>Implement semantic search using sentence transformers and FAISS to find documents based on meaning rather than keywords.</p>
+
+  <h3>How it works</h3>
+
+  <div class="diagram">Standard dense retrieval:
+  user query  -[encoder]-&gt;  query vector (question space)  -[FAISS]-&gt;  top-k
+
+HyDE retrieval:
+  user query  -[LLM]-&gt;  hypothetical document  -[encoder]-&gt;  hypo vector
+                                                                    |
+                                              (now in document space, not question space)
+                                                                    |
+                                                            FAISS search
+                                                                    |
+                                                           top-k real docs
+
+Key insight: the hypothetical doc does NOT need to be factually correct.
+Its job is to use document-like language that maps to the right region of vector space.</div>
+
+  <div class="code-label">hyde_retrieval.py</div>
+<pre><code class="language-python">import ollama
+import numpy as np
+from sentence_transformers import SentenceTransformer
+import faiss
+
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
+# Assume CORPUS, doc_vectors, faiss_index already built (see technique 1)
+
+def llm(prompt: str, system: str = "") -&gt; str:
+    """Call the local Ollama LLM and return the response text."""
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
+    resp = ollama.chat(model="llama3.2", messages=messages)
+    return resp["message"]["content"].strip()
+
+def hyde_search(query: str, k: int = 3) -&gt; list[tuple[float, str]]:
+    """
+    HyDE: generate a hypothetical document for the query,
+    embed it, and retrieve using that embedding instead of the raw query.
+    """
+    # Step 1 -- Ask the LLM to write a hypothetical answer.
+    # We want a passage that *looks like* a document in our corpus,
+    # not a conversational Q&amp;A answer.
+    hyde_prompt = (
+        f"Please write a short passage (2-3 sentences) that directly answers "
+        f"the following question. Write as if this passage appears in a technical "
+        f"reference document. Do NOT start with 'Sure' or repeat the question.
+
+"
+        f"Question: {query}"
+    )
+    hypothetical_doc = llm(hyde_prompt)
+    print(f"Hypothetical doc generated:
+  {hypothetical_doc}
+")
+
+    # Step 2 -- Embed the hypothetical DOCUMENT (not the original query!)
+    # This vector lives in "answer space" rather than "question space",
+    # aligning better with how real corpus documents were encoded.
+    hypo_vec = embedder.encode([hypothetical_doc], normalize_embeddings=True)
+
+    # Step 3 -- Search with the hypothetical embedding
+    scores, idxs = faiss_index.search(hypo_vec.astype(np.float32), k)
+    return [(float(scores[0][i]), CORPUS[idxs[0][i]]) for i in range(k)]
+
+# Example: the query uses vague language; the corpus uses specific terms
+query = "What technique uses a fake generated answer to improve search?"
+results = hyde_search(query, k=3)
+for score, doc in results:
+    print(f"  [{score:.3f}]  {doc[:80]}")</code></pre>
+
+  <div class="callout callout-warn">
+    <strong>&#9889; Latency cost</strong>
+    <p>HyDE adds one full LLM inference per query. With a local Llama 3.2 (3B) model, that's roughly 0.5&ndash;2 seconds. For latency-sensitive applications, cache hypothetical docs for common queries, generate them asynchronously, or batch-prefetch for predictable query patterns.</p>
   </div>
-</div>
-<div class="step-card pink">
-  <div class="step-num">4</div>
-  <div>
-    <h3>BM25 Sparse Retrieval</h3>
-    <p>Compare traditional keyword-based retrieval using BM25 algorithm that works well with exact term matching.</p>
-  </div>
-</div>
-<div class="step-card purple">
-  <div class="step-num">5</div>
-  <div>
-    <h3>HyDE - Hypothetical Document Embeddings</h3>
-    <p>Generate hypothetical answers with LLMs and use their embeddings to improve search relevance through semantic understanding.</p>
-  </div>
-</div>
-<div class="step-card orange">
-  <div class="step-num">6</div>
-  <div>
-    <h3>MultiQuery Expansion</h3>
-    <p>Transform single queries into multiple variations to capture different ways users might express the same intent.</p>
-  </div>
-</div>
-<div class="step-card yellow">
-  <div class="step-num">7</div>
-  <div>
-    <h3>Step-Back Abstraction</h3>
-    <p>Use LLMs to create broader conceptual queries that help surface foundational context for complex questions.</p>
-  </div>
-</div>
-<div class="step-card blue">
-  <div class="step-num">8</div>
-  <div>
-    <h3>Re-Ranking Results</h3>
-    <p>Apply cross-encoders to re-score retrieved documents for final ranking using more sophisticated pairwise comparisons.</p>
-  </div>
-</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>&#10003; When to use</h4>
+      <ul>
+        <li>Open-ended questions in natural language</li>
+        <li>Query vocabulary differs from document vocabulary</li>
+        <li>Technical docs with very specific terminology</li>
+        <li>Already using an LLM in the pipeline (marginal cost)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>&#9888; Limitations</h4>
+      <ul>
+        <li>Adds 1 LLM call latency per query</li>
+        <li>Confidently wrong hallucinations can derail retrieval</li>
+        <li>Works best with a capable LLM (small models generate poor hypotheticals)</li>
+        <li>Hard to debug: query &rarr; hypothetical &rarr; retrieved doc</li>
+      </ul>
     </div>
   </div>
-
-  <!-- Key concepts -->
-  <div class="section">
-  <h2 class="section-title">🔑 Key concepts</h2>
-  <div class="concepts-grid"><div class="concept-card"><div class="term">RAG (Retrieval-Augmented Generation)</div><div class="def">A technique that combines document retrieval with language models to provide accurate, context-aware responses.</div></div>
-<div class="concept-card"><div class="term">Dense Embeddings</div><div class="def">High-dimensional vector representations where semantically similar texts have similar vector values.</div></div>
-<div class="concept-card"><div class="term">FAISS</div><div class="def">Facebook's library for efficient similarity search and clustering of dense vectors.</div></div>
-<div class="concept-card"><div class="term">BM25</div><div class="def">A classic information retrieval algorithm that ranks documents based on term frequency and document length.</div></div>
-<div class="concept-card"><div class="term">HyDE</div><div class="def">Hypothetical Document Embeddings that generate a fake answer and use its embedding for retrieval.</div></div>
-<div class="concept-card"><div class="term">Cross-Encoder</div><div class="def">A neural network that takes both query and document as input to compute their relevance score.</div></div></div>
+</div>
 </div>
 
-  <!-- CTA -->
-  <div class="cta-box">
-    <h2>Ready to dive in?</h2>
-    <p>No install needed — runs entirely in your browser via Google Colab.</p>
-    <div class="cta-actions">
-      <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/rag-techniques-ollama.ipynb" target="_blank" class="btn btn-colab" style="font-size:1rem;padding:0.75rem 1.75rem">
-        🚀 Open in Colab — it's free!
-      </a>
-      <a href="https://github.com/Copilotclaw/trainingdemo" class="btn" style="background:rgba(255,255,255,0.15);color:white;font-size:1rem;padding:0.75rem 1.75rem">
-        📁 Browse All Notebooks
-      </a>
+<!-- 4. MULTIQUERY -->
+<div class="technique-section" id="multiquery">
+<div class="container">
+  <div class="section-header">
+    <div class="section-num" style="background:#56d364">4</div>
+    <div>
+      <h2>MultiQuery Retrieval</h2>
+      <p style="color:var(--text-dim);font-size:0.9rem">Expand one query into N variants to dramatically improve recall</p>
     </div>
+    <span class="badge" style="background:rgba(86,211,100,0.15);color:#56d364;border:1px solid rgba(86,211,100,0.3)">Recall booster</span>
   </div>
 
-</main>
+  <div class="callout callout-problem">
+    <strong>&#128680; Problem it solves</strong>
+    <p>A single query captures only one possible framing of the user's intent. "How do local language models help with private search?" might match well-worded corpus documents, but entirely miss documents about "on-premise LLM inference," "air-gapped retrieval pipelines," or "running models without cloud APIs." A single query vector is just one point in the embedding space &mdash; relevant documents in other neighbourhoods are invisible to it.</p>
+    <p>MultiQuery treats retrieval as a multi-perspective problem: generate several semantically diverse rephrases, retrieve for all of them, and merge. Recall improves because different phrasings reach different regions of the embedding space.</p>
+  </div>
+
+  <h3>How it works</h3>
+
+  <div class="diagram">original query: "How do local models help with private search?"
+       |
+       +--[LLM paraphrase]-&gt; variant 1: "Running LLMs locally for data privacy"
+       +--[LLM paraphrase]-&gt; variant 2: "On-premise language model inference pipelines"
+       +--[LLM paraphrase]-&gt; variant 3: "Air-gapped RAG without cloud dependencies"
+
+For each variant (+ original query):
+  dense_search(v1) --&gt; {doc_A:0.91, doc_C:0.87, doc_F:0.82}
+  dense_search(v2) --&gt; {doc_B:0.88, doc_C:0.85, doc_G:0.80}
+  dense_search(v3) --&gt; {doc_D:0.92, doc_A:0.83, doc_E:0.79}
+
+Merge: per doc, keep the BEST score seen across all variant retrievals
+Result: {doc_A, doc_B, doc_C, doc_D, doc_E, doc_F, doc_G}  --  much wider coverage!</div>
+
+  <div class="code-label">multiquery_retrieval.py</div>
+<pre><code class="language-python">import ollama
+import numpy as np
+from sentence_transformers import SentenceTransformer
+import faiss
+
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
+# Assume CORPUS, faiss_index already built
+
+def llm(prompt: str) -&gt; str:
+    resp = ollama.chat(model="llama3.2", messages=[{"role": "user", "content": prompt}])
+    return resp["message"]["content"].strip()
+
+def dense_search(query: str, k: int = 3) -&gt; list[tuple[float, str]]:
+    q_vec = embedder.encode([query], normalize_embeddings=True)
+    scores, idxs = faiss_index.search(q_vec.astype(np.float32), k)
+    return [(float(scores[0][i]), CORPUS[idxs[0][i]]) for i in range(k)]
+
+def multiquery_search(
+    query: str,
+    n_variants: int = 3,
+    k_per_variant: int = 3
+) -&gt; list[tuple[float, str]]:
+    """
+    MultiQuery retrieval:
+      1. Generate n_variants rephrases of the original query via LLM.
+      2. Run dense retrieval for each variant + the original.
+      3. Merge: keep the best score seen for each unique document.
+    """
+    # Step 1 -- Generate query variants
+    mq_prompt = (
+        f"Generate {n_variants} different phrasings of the following search query. "
+        f"Each phrasing should emphasise a slightly different aspect or use different "
+        f"vocabulary. Output ONLY the {n_variants} queries, one per line, "
+        f"no numbering, no explanations.
+
+Original query: {query}"
+    )
+    variants_raw = llm(mq_prompt)
+    variants = [v.strip() for v in variants_raw.strip().splitlines() if v.strip()]
+    variants = variants[:n_variants]
+    all_queries = [query] + variants
+
+    print(f"Running {len(all_queries)} query variants:")
+    for q in all_queries:
+        print(f"  - {q}")
+
+    # Step 2 -- Retrieve for every variant, track best score per document
+    best_scores: dict[str, float] = {}  # doc_text -&gt; best score seen
+    for q in all_queries:
+        for score, doc in dense_search(q, k=k_per_variant):
+            if doc not in best_scores or score &gt; best_scores[doc]:
+                best_scores[doc] = score
+
+    # Step 3 -- Sort by best score
+    ranked = sorted(best_scores.items(), key=lambda x: x[1], reverse=True)
+    return [(score, doc) for doc, score in ranked]
+
+# Example
+query = "How do local language models help with private search pipelines?"
+results = multiquery_search(query, n_variants=3, k_per_variant=3)
+for score, doc in results[:5]:
+    print(f"  [{score:.3f}]  {doc[:80]}")</code></pre>
+
+  <div class="callout callout-tip">
+    <strong>&#128161; Reciprocal Rank Fusion (RRF)</strong>
+    <p>Instead of keeping the best score per document, you can fuse using RRF: for each retrieval run, score each document as <code>1 / (rank + 60)</code>, then sum across all runs. RRF is robust to score-scale differences between runs and is the standard for multi-retriever fusion in production. The constant 60 comes from empirical tuning and dampens the effect of very low ranks.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>&#10003; When to use</h4>
+      <ul>
+        <li>Short or ambiguous user queries</li>
+        <li>Large, diverse corpus with many valid phrasings</li>
+        <li>Recall is more important than latency</li>
+        <li>Followed by a re-ranker to filter the larger candidate set</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>&#9888; Limitations</h4>
+      <ul>
+        <li>1 LLM call + N&times;dense_search calls per query</li>
+        <li>LLM variants may be poor paraphrases for very short queries</li>
+        <li>More candidates = higher downstream re-ranking cost</li>
+        <li>Results can be noisy if variants drift from original intent</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 5. STEP-BACK -->
+<div class="technique-section" id="stepback">
+<div class="container">
+  <div class="section-header">
+    <div class="section-num" style="background:#e3b341">5</div>
+    <div>
+      <h2>Step-Back Prompting</h2>
+      <p style="color:var(--text-dim);font-size:0.9rem">Retrieve on an abstracted question to surface background context</p>
+    </div>
+    <span class="badge" style="background:rgba(227,179,65,0.15);color:#e3b341;border:1px solid rgba(227,179,65,0.3)">Context enrichment</span>
+  </div>
+
+  <div class="callout callout-problem">
+    <strong>&#128680; Problem it solves</strong>
+    <p>Highly specific queries systematically miss important background context. "How does FAISS store vectors for fast lookup?" is so specific that it only retrieves FAISS-specific documents &mdash; but the LLM generating an answer might actually need foundational documents about vector spaces, approximate nearest-neighbour algorithms, or how cosine similarity works.</p>
+    <p>Step-Back prompting (Zheng et al., 2023) deliberately zooms out before retrieving. The LLM first rephrases the specific question as a broader, more abstract question. Retrieving on this broader question surfaces foundational context that narrow queries systematically miss, giving the downstream LLM richer material to reason from.</p>
+  </div>
+
+  <h3>How it works</h3>
+
+  <div class="diagram">specific query: "How does FAISS store vectors for fast lookup at query time?"
+       |
+       +--[LLM step-back]-&gt; "What are the principles behind vector indexing for similarity search?"
+       |
+       Retrieve on BOTH the step-back (abstract) and original (specific) queries:
+       |
+       dense_search(step_back_query)  -&gt;  broad context docs
+            doc: "Dense embeddings map text into high-dimensional vector space"
+            doc: "FAISS supports exact and approximate nearest-neighbour algorithms"
+       |
+       dense_search(original_query)   -&gt;  specific answer docs
+            doc: "FAISS is a library for efficient similarity search over dense vectors"
+       |
+       Merge both sets  -&gt;  rich context for LLM answer synthesis</div>
+
+  <div class="code-label">stepback_retrieval.py</div>
+<pre><code class="language-python">import ollama
+from sentence_transformers import SentenceTransformer
+import faiss
+import numpy as np
+
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
+# Assume CORPUS, faiss_index already built
+
+def llm(prompt: str) -&gt; str:
+    resp = ollama.chat(model="llama3.2", messages=[{"role": "user", "content": prompt}])
+    return resp["message"]["content"].strip()
+
+def dense_search(query: str, k: int = 3) -&gt; list[tuple[float, str]]:
+    q_vec = embedder.encode([query], normalize_embeddings=True)
+    scores, idxs = faiss_index.search(q_vec.astype(np.float32), k)
+    return [(float(scores[0][i]), CORPUS[idxs[0][i]]) for i in range(k)]
+
+def stepback_search(query: str, k: int = 3) -&gt; list[tuple[float, str]]:
+    """
+    Step-Back retrieval:
+      1. Ask the LLM to rephrase the specific question more abstractly.
+      2. Retrieve on the abstract (step-back) question.
+      3. Also retrieve on the original specific question.
+      4. Merge both result sets, keeping best score per document.
+    """
+    # Step 1 -- Generate the abstract / step-back question
+    sb_prompt = (
+        f"Given the following specific question, produce a single more general, "
+        f"abstract version that captures the broader concept or principle being asked about. "
+        f"The generalised question should help retrieve background context that would "
+        f"help answer the specific question. "
+        f"Output ONLY the generalised question, nothing else.
+
+"
+        f"Specific question: {query}"
+    )
+    step_back_query = llm(sb_prompt)
+    print(f"Step-back query: {step_back_query}
+")
+
+    # Step 2 -- Retrieve on the broader abstract query (background context)
+    sb_results = dense_search(step_back_query, k=k)
+    print("Background context (from step-back query):")
+    for score, doc in sb_results:
+        print(f"  [{score:.3f}]  {doc[:70]}")
+
+    # Step 3 -- Retrieve on the original specific query (direct answer docs)
+    orig_results = dense_search(query, k=k)
+    print("
+Specific docs (from original query):")
+    for score, doc in orig_results:
+        print(f"  [{score:.3f}]  {doc[:70]}")
+
+    # Step 4 -- Merge, keeping best score per unique document
+    best_scores: dict[str, float] = {}
+    for score, doc in sb_results + orig_results:
+        if doc not in best_scores or score &gt; best_scores[doc]:
+            best_scores[doc] = score
+
+    merged = sorted(best_scores.items(), key=lambda x: x[1], reverse=True)
+    return [(score, doc) for doc, score in merged]
+
+# Example
+query = "How does FAISS store vectors for fast lookup at query time?"
+results = stepback_search(query, k=3)
+print(f"
+Final merged results ({len(results)} unique docs):")
+for score, doc in results:
+    print(f"  [{score:.3f}]  {doc[:80]}")</code></pre>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>&#10003; When to use</h4>
+      <ul>
+        <li>Answering highly specific technical or factual questions</li>
+        <li>Corpus mixes overview docs with deep-dive details</li>
+        <li>Users need context to understand the specific answer</li>
+        <li>Multi-hop reasoning where background helps the LLM</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>&#9888; Limitations</h4>
+      <ul>
+        <li>Step-back query may be too vague for narrow domains</li>
+        <li>Extra LLM call adds latency</li>
+        <li>Merging can surface off-topic background docs</li>
+        <li>Quality depends on LLM's abstraction capability</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 6. RERANKING -->
+<div class="technique-section" id="rerank">
+<div class="container">
+  <div class="section-header">
+    <div class="section-num" style="background:#f78166">6</div>
+    <div>
+      <h2>Cross-Encoder Re-Ranking</h2>
+      <p style="color:var(--text-dim);font-size:0.9rem">Two-stage pipeline: fast retrieval + accurate joint scoring</p>
+    </div>
+    <span class="badge" style="background:rgba(247,129,102,0.15);color:#f78166;border:1px solid rgba(247,129,102,0.3)">Precision booster</span>
+  </div>
+
+  <div class="callout callout-problem">
+    <strong>&#128680; Problem it solves</strong>
+    <p>Bi-encoders are fast because they encode query and document <em>independently</em> and compare the resulting vectors. But independence is also their weakness: the model never sees the query and document together, so it can't reason about specific word interactions, negations, or nuanced relevance signals.</p>
+    <p>A cross-encoder reads query and document <em>jointly</em> as a single concatenated input: <code>[CLS] query [SEP] document [SEP]</code>. Full transformer attention flows between every query token and every document token. This is far more accurate &mdash; but also far slower, scaling quadratically with combined input length.</p>
+    <p>The solution: use the fast bi-encoder to cheaply retrieve a <em>candidate set</em> (top 10&ndash;20 docs), then use the accurate cross-encoder to re-rank just those candidates. You get the speed of the bi-encoder and the precision of the cross-encoder.</p>
+  </div>
+
+  <h3>How it works</h3>
+
+  <div class="diagram">Stage 1 -- Bi-encoder (fast, scales to millions of docs):
+
+  query  -[encoder]-&gt;  query_vec   (computed at query time)
+  doc_i  -[encoder]-&gt;  doc_vec_i   (pre-computed and cached at index time)
+                cosine similarity  -&gt;  retrieve top-20 candidates cheaply
+
+Stage 2 -- Cross-encoder (accurate, only runs on candidates):
+
+  [CLS] query [SEP] doc_1  [SEP]  -[transformer]-&gt;  relevance score: 0.94
+  [CLS] query [SEP] doc_2  [SEP]  -[transformer]-&gt;  relevance score: 0.61
+  [CLS] query [SEP] doc_3  [SEP]  -[transformer]-&gt;  relevance score: 0.88
+  ...
+  [CLS] query [SEP] doc_20 [SEP]  -[transformer]-&gt;  relevance score: 0.35
+
+  Full attention between query and doc tokens -&gt; much more accurate
+  Sort by cross-encoder score -&gt; final top-k results</div>
+
+  <div class="code-label">reranking.py</div>
+<pre><code class="language-python">import numpy as np
+from sentence_transformers import SentenceTransformer, CrossEncoder
+import faiss
+
+# ── Load both models ──────────────────────────────────────────────────
+# Bi-encoder: fast, independent encoding for retrieval
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
+
+# Cross-encoder: accurate, joint encoding for re-ranking.
+# ms-marco-MiniLM-L-6-v2 is trained on the Microsoft MARCO passage ranking dataset.
+# It outputs a raw relevance logit (higher = more relevant).
+cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+
+# Assume CORPUS, faiss_index already built
+
+def dense_search(query: str, k: int = 10) -&gt; list[tuple[float, str]]:
+    q_vec = embedder.encode([query], normalize_embeddings=True)
+    scores, idxs = faiss_index.search(q_vec.astype(np.float32), k)
+    return [(float(scores[0][i]), CORPUS[idxs[0][i]]) for i in range(k)]
+
+def rerank_search(
+    query: str,
+    candidate_k: int = 10,
+    final_k: int = 3
+) -&gt; list[tuple[float, str]]:
+    """
+    Two-stage retrieval + re-ranking pipeline.
+
+    Stage 1: Cast a wide net with the fast bi-encoder (candidate_k docs).
+    Stage 2: Re-score each candidate jointly with the cross-encoder.
+             The cross-encoder sees both the query AND the document text,
+             enabling it to catch fine-grained relevance signals.
+    """
+    # Stage 1 -- Retrieve a wider candidate pool
+    candidates = dense_search(query, k=candidate_k)
+    candidate_docs = [doc for _, doc in candidates]
+    print(f"Stage 1: {len(candidate_docs)} candidates from bi-encoder")
+
+    # Stage 2 -- Cross-encoder scores every (query, doc) pair jointly.
+    # Input must be a list of [query, document] pairs.
+    pairs = [[query, doc] for doc in candidate_docs]
+    ce_scores = cross_encoder.predict(pairs)  # shape: (candidate_k,)
+    # ce_scores contains raw logits -- higher means more relevant
+
+    # Re-sort by cross-encoder score
+    reranked = sorted(
+        zip(ce_scores.tolist(), candidate_docs),
+        key=lambda x: x[0],
+        reverse=True
+    )
+
+    print(f"
+Stage 2: re-ranked by cross-encoder (showing top {final_k}):")
+    for ce_score, doc in reranked[:final_k]:
+        print(f"  [CE {ce_score:.3f}]  {doc[:70]}")
+
+    return [(float(score), doc) for score, doc in reranked[:final_k]]
+
+# Example
+query = "What methods improve the accuracy of retrieved documents in RAG?"
+results = rerank_search(query, candidate_k=10, final_k=3)</code></pre>
+
+  <div class="callout callout-tip">
+    <strong>&#128161; Why not use the cross-encoder for all documents?</strong>
+    <p>A cross-encoder must process every (query, document) pair at query time. With 100,000 documents, that's 100,000 full forward passes per query &mdash; completely infeasible for real-time applications. The bi-encoder pre-computes all document embeddings once and retrieves in milliseconds via FAISS. The two-stage design gives you speed <em>and</em> precision: the bi-encoder narrows the search space, the cross-encoder perfects the ranking.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>&#10003; When to use</h4>
+      <ul>
+        <li>Precision matters (docs are passed to a costly LLM)</li>
+        <li>After MultiQuery: large merged set needs filtering</li>
+        <li>High-stakes domains: medical, legal, financial</li>
+        <li>When bi-encoder top-1 "feels wrong" but the right doc is in top-10</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>&#9888; Limitations</h4>
+      <ul>
+        <li>~50&ndash;200ms latency for 10&ndash;20 candidates on CPU</li>
+        <li>Cannot scale to full corpus &mdash; must pair with fast retrieval</li>
+        <li>ms-marco model trained on web queries; may need domain fine-tuning</li>
+        <li>Still not fully interpretable &mdash; just better scores</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- COMPARISON -->
+<div class="technique-section" id="comparison" style="border-bottom:none">
+<div class="container">
+  <h2 style="font-size:1.8rem; margin-bottom:0.5rem;">&#128202; Comparison Table</h2>
+  <p style="color:var(--text-dim); margin-bottom:2rem;">Side-by-side overview of all six techniques.</p>
+
+  <div style="overflow-x:auto">
+  <table class="comp-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Technique</th>
+        <th>Core idea</th>
+        <th>Speed</th>
+        <th>LLM call?</th>
+        <th>Best for</th>
+        <th>Combine with</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong style="color:#58a6ff">1</strong></td>
+        <td><strong>Dense Embedding</strong></td>
+        <td>Bi-encoder vectors + FAISS cosine search</td>
+        <td><span class="badge-pill bp-fast">Fast</span></td>
+        <td>No</td>
+        <td>Semantic queries, multilingual</td>
+        <td>BM25, Re-Ranking</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#ffa657">2</strong></td>
+        <td><strong>BM25</strong></td>
+        <td>TF-IDF keyword scoring, no neural net</td>
+        <td><span class="badge-pill bp-fast">Fastest</span></td>
+        <td>No</td>
+        <td>Exact terms, jargon, no GPU</td>
+        <td>Dense (hybrid RRF)</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#d2a8ff">3</strong></td>
+        <td><strong>HyDE</strong></td>
+        <td>LLM generates hypothetical answer; embed that</td>
+        <td><span class="badge-pill bp-med">Medium</span></td>
+        <td>Yes (1&times;)</td>
+        <td>Vocabulary mismatch, open-ended questions</td>
+        <td>Dense, Re-Ranking</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#56d364">4</strong></td>
+        <td><strong>MultiQuery</strong></td>
+        <td>LLM rephrases query N ways; merge all results</td>
+        <td><span class="badge-pill bp-med">Medium</span></td>
+        <td>Yes (1&times;)</td>
+        <td>Short/ambiguous queries, high recall</td>
+        <td>Re-Ranking (filter merged set)</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#e3b341">5</strong></td>
+        <td><strong>Step-Back</strong></td>
+        <td>LLM abstracts query; retrieve broad + specific</td>
+        <td><span class="badge-pill bp-med">Medium</span></td>
+        <td>Yes (1&times;)</td>
+        <td>Specific questions needing background context</td>
+        <td>Dense, MultiQuery</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#f78166">6</strong></td>
+        <td><strong>Cross-Encoder Re-Rank</strong></td>
+        <td>Joint query+doc scoring via full transformer attention</td>
+        <td><span class="badge-pill bp-slow">Slow (candidates only)</span></td>
+        <td>No (separate model)</td>
+        <td>Maximising precision, final stage of any pipeline</td>
+        <td>Any of the above</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout callout-how" style="margin-top:2rem">
+    <strong>&#127959; Recommended production pipeline</strong>
+    <p style="margin-top:0.5rem">For most real-world RAG systems, this stack covers 90% of use cases:</p>
+    <ol style="margin: 0.75rem 0 0 1.5rem">
+      <li style="margin:0.4rem 0;color:var(--text-dim)"><strong>Hybrid retrieval</strong> &mdash; Dense + BM25 with RRF (captures both semantic and keyword signals)</li>
+      <li style="margin:0.4rem 0;color:var(--text-dim)"><strong>MultiQuery or HyDE</strong> &mdash; for queries where recall is critical or vocabulary gap is known</li>
+      <li style="margin:0.4rem 0;color:var(--text-dim)"><strong>Cross-Encoder Re-Ranking</strong> &mdash; always last, on the merged candidate pool, before passing to the LLM</li>
+    </ol>
+  </div>
+</div>
+</div>
 
 <footer>
-  <p>Generated by <a href="https://github.com/Copilotclaw/copilotclaw">🦃 Crunch</a> — AI agent @ Copilotclaw &nbsp;·&nbsp;
-  <a href="https://github.com/Copilotclaw/trainingdemo">trainingdemo</a></p>
+  <div class="container">
+    <p>&#128269; Advanced RAG Techniques &mdash; created for the <a href="https://github.com/Copilotclaw/trainingdemo">trainingdemo</a> repository</p>
+    <p style="margin-top:0.5rem">Dense Embedding &middot; BM25 &middot; HyDE &middot; MultiQuery &middot; Step-Back &middot; Cross-Encoder Re-Ranking</p>
+    <p style="margin-top:0.5rem;font-size:0.78rem;color:#484f58">sentence-transformers &middot; faiss-cpu &middot; rank-bm25 &middot; ollama &middot; cross-encoder/ms-marco-MiniLM-L-6-v2</p>
+  </div>
 </footer>
 
 </body>
