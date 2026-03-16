@@ -1202,3 +1202,4 @@ REPO CLEANUP - claudclaw [2026-03-10T11:01Z]
 [memory-lookup] MISS — no relevant lessons for issue #204 keywords='session test'
 [2026-03-15T14:33:11Z] HOOK:SessionStart source=new
 [2026-03-15T14:33:24Z] HOOK:SessionEnd reason=complete
+2026-03-16T15:30:06Z [infra] LESSON: Ollama on Colab requires zstd. The install script (ollama.ai/install.sh) uses zstd to extract the binary. Without it, install silently fails and Popen(['ollama',...]) throws FileNotFoundError. Fix: apt-get install -y zstd BEFORE running install script. Also: use capture_output=True + check returncode to catch silent failures.
