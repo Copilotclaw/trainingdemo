@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Installing Ollama on Google Colab — The zstd Fix</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.min.js"></script>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --surface: #ffffff;
+    --ink: #1a1a2e;
+    --muted: #6b7280;
+    --accent: #7c3aed;
+    --accent2: #0ea5e9;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --accent5: #ef4444;
+    --border: #e5e7eb;
+    --code-bg: #1e1e2e;
+    --code-fg: #cdd6f4;
+    --c-yellow: #fef9c3;
+    --c-blue: #dbeafe;
+    --c-green: #dcfce7;
+    --c-pink: #fce7f3;
+    --c-purple: #ede9fe;
+    --c-orange: #ffedd5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.7;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: var(--c-yellow);
+    border-bottom: 3px solid var(--ink);
+    padding: 3.5rem 2rem 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+  .hero-content { position: relative; z-index: 1; }
+  .hero-emoji { font-size: 4rem; margin-bottom: 0.5rem; }
+  .hero h1 {
+    font-family: 'Caveat', cursive;
+    font-size: clamp(2.2rem, 5vw, 4rem);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .hero p {
+    font-family: 'Caveat', cursive;
+    font-size: 1.4rem;
+    color: #555;
+    max-width: 620px;
+    margin: 0 auto 1.5rem;
+  }
+  .hero-badges { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: white;
+  }
+
+  /* ── Layout ── */
+  .section {
+    max-width: 860px;
+    margin: 3rem auto;
+    padding: 0 1.5rem;
+  }
+  .section-title {
+    font-family: 'Caveat', cursive;
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* ── Cards ── */
+  .card {
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .card.yellow { background: var(--c-yellow); }
+  .card.blue   { background: var(--c-blue); }
+  .card.green  { background: var(--c-green); }
+  .card.pink   { background: var(--c-pink); }
+  .card.purple { background: var(--c-purple); }
+  .card.orange { background: var(--c-orange); }
+  .card h3 {
+    font-family: 'Caveat', cursive;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+  .card p { margin-bottom: 0.6rem; }
+  .card p:last-child { margin-bottom: 0; }
+
+  /* ── Step flow ── */
+  .steps { display: flex; flex-direction: column; gap: 1rem; }
+  .step {
+    display: flex;
+    gap: 1.1rem;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 2.2rem; height: 2.2rem;
+    border-radius: 50%;
+    border: 2.5px solid var(--ink);
+    background: var(--c-yellow);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Caveat', cursive;
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+  .step-body { flex: 1; }
+  .step-body strong { display: block; margin-bottom: 0.3rem; font-weight: 600; }
+
+  /* ── Code ── */
+  .code-block {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    padding: 1.2rem 1.4rem;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+    border: 2px solid #313244;
+  }
+  .code-block .kw  { color: #cba6f7; } /* keyword */
+  .code-block .fn  { color: #89dceb; } /* function */
+  .code-block .str { color: #a6e3a1; } /* string */
+  .code-block .cm  { color: #6c7086; font-style: italic; } /* comment */
+  .code-block .nb  { color: #fab387; } /* builtin / number */
+  .code-block .err { color: #f38ba8; text-decoration: underline wavy; } /* error */
+
+  /* ── Two-column comparison ── */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  @media (max-width: 640px) { .compare { grid-template-columns: 1fr; } }
+  .compare-box { border: 2.5px solid var(--ink); border-radius: 12px; overflow: hidden; }
+  .compare-header {
+    padding: 0.6rem 1rem;
+    font-family: 'Caveat', cursive;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border-bottom: 2px solid var(--ink);
+  }
+  .compare-header.bad  { background: #fecaca; }
+  .compare-header.good { background: #bbf7d0; }
+  .compare-body { padding: 0; }
+  .compare-body .code-block { border-radius: 0; border: none; margin: 0; }
+
+  /* ── Alert ── */
+  .alert {
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.2rem;
+    display: flex; gap: 0.8rem; align-items: flex-start;
+  }
+  .alert.danger { background: #fef2f2; border-color: #ef4444; }
+  .alert.success { background: var(--c-green); }
+  .alert .alert-icon { font-size: 1.4rem; flex-shrink: 0; }
+  .alert .alert-body strong { display: block; font-weight: 600; margin-bottom: 0.2rem; }
+
+  /* ── Inline code ── */
+  code {
+    background: #f1f0f5;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+  }
+
+  /* ── Troubleshoot table ── */
+  .trouble { border-collapse: collapse; width: 100%; margin-top: 0.5rem; }
+  .trouble th {
+    text-align: left;
+    padding: 0.6rem 1rem;
+    background: var(--c-purple);
+    border: 2px solid var(--ink);
+    font-weight: 600;
+  }
+  .trouble td {
+    padding: 0.7rem 1rem;
+    border: 1.5px solid #d1d5db;
+    vertical-align: top;
+  }
+  .trouble tr:nth-child(odd) td { background: #fafaf8; }
+  .trouble tr:nth-child(even) td { background: white; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    border-top: 2px solid var(--border);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  footer strong { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════ HERO ══════════════════════════════ -->
+<div class="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-emoji">🦙</div>
+    <h1>Installing Ollama on Google Colab</h1>
+    <p>Why your install silently fails — and the one-line fix</p>
+    <div class="hero-badges">
+      <span class="badge">🔧 zstd fix</span>
+      <span class="badge">☁️ Google Colab</span>
+      <span class="badge">🦙 Ollama</span>
+      <span class="badge">🐍 Python</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ WHAT IS OLLAMA ══════════════════════════════ -->
+<div class="section">
+  <div class="section-title">🦙 What is Ollama?</div>
+  <div class="card blue">
+    <p>
+      <strong>Ollama</strong> is an open-source tool that lets you download and run large language models
+      (like <code>llama3.2</code>, <code>mistral</code>, <code>phi3</code>) entirely on your own machine —
+      no API key, no internet dependency, no usage fees.
+    </p>
+    <p>
+      On Google Colab you get a free GPU/CPU environment, which makes it tempting to run Ollama
+      there for demos and experiments. The official install is a single <code>curl | sh</code> command.
+      Simple — except when it isn't.
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ THE PROBLEM ══════════════════════════════ -->
+<div class="section">
+  <div class="section-title">💥 The Problem</div>
+
+  <div class="alert danger">
+    <div class="alert-icon">⚠️</div>
+    <div class="alert-body">
+      <strong>The Ollama install script exits 0 (success) — but leaves no binary behind.</strong>
+      Your Python code then crashes with <code>FileNotFoundError: [Errno 2] No such file or directory: 'ollama'</code>
+    </div>
+  </div>
+
+  <div class="card pink">
+    <h3>Root Cause: Missing zstd</h3>
+    <p>
+      Ollama packages its Linux binary using the <strong>Zstandard</strong> (<code>zstd</code>) compression format —
+      a fast, high-ratio compressor from Facebook/Meta.
+    </p>
+    <p>
+      The install script (<code>https://ollama.ai/install.sh</code>) downloads an archive and uses
+      <code>zstd</code> to decompress it before placing the binary in <code>/usr/local/bin/</code>.
+    </p>
+    <p>
+      Google Colab's Ubuntu environment does <strong>not</strong> ship with <code>zstd</code> by default.
+      The decompression step silently fails, the binary is never created, and the install script
+      still exits <code>0</code> — giving you no warning at all.
+    </p>
+  </div>
+
+  <div class="card yellow">
+    <h3>🔍 The Error Chain</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>curl | sh runs the install script</strong>
+          Script downloads <code>ollama-linux-amd64.tar.zst</code> and tries to extract it.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>zstd not found — extraction fails silently</strong>
+          The script continues anyway, exits 0. Nothing in Python catches this.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>No binary at /usr/local/bin/ollama</strong>
+          The file was never written to disk.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Popen(["ollama", "serve"]) raises FileNotFoundError</strong>
+          Python can't exec a binary that doesn't exist.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ THE FIX ══════════════════════════════ -->
+<div class="section">
+  <div class="section-title">✅ The Fix</div>
+
+  <p style="margin-bottom:1rem;">
+    Install <code>zstd</code> with a single <code>apt-get</code> command <em>before</em> running the Ollama install script.
+    That's it.
+  </p>
+
+  <div class="compare">
+    <div class="compare-box">
+      <div class="compare-header bad">❌ Broken (no zstd)</div>
+      <div class="compare-body">
+        <div class="code-block"><span class="kw">import</span> subprocess
+
+<span class="cm"># Install Ollama — no zstd, silently fails</span>
+subprocess.<span class="fn">run</span>(
+    <span class="str">"curl -fsSL https://ollama.ai/install.sh | sh"</span>,
+    shell=<span class="nb">True</span>
+)
+
+<span class="cm"># 💥 FileNotFoundError!</span>
+subprocess.<span class="fn">Popen</span>([<span class="str">"ollama"</span>, <span class="str">"serve"</span>])</div>
+      </div>
+    </div>
+    <div class="compare-box">
+      <div class="compare-header good">✅ Fixed (with zstd)</div>
+      <div class="compare-body">
+        <div class="code-block"><span class="kw">import</span> subprocess
+
+<span class="cm"># Step 1: install zstd FIRST</span>
+subprocess.<span class="fn">run</span>(
+    <span class="str">"apt-get install -y zstd"</span>,
+    shell=<span class="nb">True</span>, check=<span class="nb">True</span>
+)
+
+<span class="cm"># Step 2: now Ollama installs correctly</span>
+subprocess.<span class="fn">run</span>(
+    <span class="str">"curl -fsSL https://ollama.ai/install.sh | sh"</span>,
+    shell=<span class="nb">True</span>, check=<span class="nb">True</span>
+)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert success">
+    <div class="alert-icon">💡</div>
+    <div class="alert-body">
+      <strong>One line saves you 20 minutes of debugging.</strong>
+      <code>apt-get install -y zstd</code> takes about 2 seconds on Colab and prevents the entire silent-fail cascade.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ COMPLETE SETUP CELL ══════════════════════════════ -->
+<div class="section">
+  <div class="section-title">📋 Complete Colab Setup Cell</div>
+  <p style="margin-bottom:0.75rem;">
+    Drop this into the first code cell of any notebook that uses Ollama. It auto-detects Colab,
+    installs everything, starts the server, and pulls the model.
+  </p>
+  <div class="code-block"><span class="kw">import</span> subprocess, time, os, shutil
+
+<span class="kw">def</span> <span class="fn">is_colab</span>():
+    <span class="kw">try</span>:
+        <span class="kw">import</span> google.colab; <span class="kw">return</span> <span class="nb">True</span>
+    <span class="kw">except</span> ImportError: <span class="kw">return</span> <span class="nb">False</span>
+
+<span class="kw">if</span> <span class="fn">is_colab</span>():
+    print(<span class="str">"Colab detected — installing Ollama..."</span>)
+
+    <span class="cm"># ✅ zstd is required by the Ollama install script — install it first!</span>
+    subprocess.<span class="fn">run</span>(<span class="str">"apt-get install -y zstd"</span>, shell=<span class="nb">True</span>, check=<span class="nb">True</span>)
+
+    <span class="cm"># Install Ollama (now zstd is available, extraction succeeds)</span>
+    result = subprocess.<span class="fn">run</span>(
+        <span class="str">"curl -fsSL https://ollama.ai/install.sh | sh"</span>,
+        shell=<span class="nb">True</span>, capture_output=<span class="nb">True</span>, text=<span class="nb">True</span>
+    )
+    <span class="kw">if</span> result.returncode != <span class="nb">0</span>:
+        print(<span class="str">"⚠️ Install stderr:"</span>, result.stderr[-<span class="nb">1000</span>:])
+        <span class="kw">raise</span> RuntimeError(<span class="str">"Ollama install failed"</span>)
+    print(<span class="str">"Install complete."</span>)
+
+    <span class="cm"># Locate binary (install.sh puts it in /usr/local/bin)</span>
+    ollama_bin = shutil.<span class="fn">which</span>(<span class="str">"ollama"</span>) <span class="kw">or</span> <span class="str">"/usr/local/bin/ollama"</span>
+    <span class="kw">if not</span> os.path.<span class="fn">exists</span>(ollama_bin):
+        <span class="kw">raise</span> FileNotFoundError(
+            <span class="str">f"Ollama binary not found at {ollama_bin}. stdout: {result.stdout[-500:]}"</span>
+        )
+    print(<span class="str">f"Ollama binary: {ollama_bin}"</span>)
+
+    <span class="cm"># Start server in the background</span>
+    subprocess.<span class="fn">Popen</span>(
+        [ollama_bin, <span class="str">"serve"</span>],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
+    time.<span class="fn">sleep</span>(<span class="nb">5</span>)  <span class="cm"># wait for server to start</span>
+
+    <span class="cm"># Pull the model</span>
+    subprocess.<span class="fn">run</span>([ollama_bin, <span class="str">"pull"</span>, <span class="str">"llama3.2"</span>], check=<span class="nb">True</span>)
+    print(<span class="str">"✅ Ollama ready"</span>)
+
+<span class="kw">else</span>:
+    print(<span class="str">"Local run — assuming Ollama is already running with llama3.2 pulled"</span>)</div>
+
+  <div class="card green" style="margin-top:1rem;">
+    <h3>💡 Key Details</h3>
+    <p><strong>capture_output=True</strong> — captures stdout/stderr so you can see what went wrong if the install fails.</p>
+    <p><strong>shutil.which("ollama")</strong> — finds the binary using PATH lookup first, then falls back to the known install location.</p>
+    <p><strong>time.sleep(5)</strong> — the server needs a few seconds to bind its port after starting.</p>
+    <p><strong>is_colab() guard</strong> — skips the whole setup when running locally where Ollama is already installed.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ WHY ZSTD ══════════════════════════════ -->
+<div class="section">
+  <div class="section-title">🗜️ Why zstd?</div>
+  <div class="card purple">
+    <h3>Zstandard — Fast Modern Compression</h3>
+    <p>
+      <strong>Zstandard (zstd)</strong> is a fast, lossless compression algorithm developed by Facebook/Meta.
+      Released in 2016, it offers significantly better speed than <code>gzip</code>/<code>bzip2</code>
+      at comparable compression ratios.
+    </p>
+    <p>
+      Ollama chose <code>.tar.zst</code> for its release archives to keep download sizes small while
+      allowing fast decompression on target machines. It's standard on modern Linux desktops — but
+      Colab's Ubuntu environment is minimal and doesn't include it by default.
+    </p>
+  </div>
+
+  <div class="card orange">
+    <h3>📦 Why Colab Doesn't Have It</h3>
+    <p>
+      Google Colab runs on minimal Ubuntu images optimised for ML workloads (CUDA, Python, Jupyter).
+      Tools that come pre-installed are carefully curated for size. <code>zstd</code>, while common on
+      modern desktop Linux distros (Ubuntu 20.04+, Arch, Fedora), is not in the default Colab image.
+    </p>
+    <p>
+      Installing it takes ~2 seconds and costs nothing. One <code>apt-get install -y zstd</code> and
+      you're done.
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ TROUBLESHOOTING ══════════════════════════════ -->
+<div class="section">
+  <div class="section-title">🛠️ Troubleshooting</div>
+
+  <table class="trouble">
+    <tr>
+      <th>Symptom</th>
+      <th>Likely Cause</th>
+      <th>Fix</th>
+    </tr>
+    <tr>
+      <td><code>FileNotFoundError: 'ollama'</code></td>
+      <td>zstd missing — binary was never created</td>
+      <td>Add <code>apt-get install -y zstd</code> before the install script</td>
+    </tr>
+    <tr>
+      <td>Install exits 0 but binary not in PATH</td>
+      <td>PATH not refreshed in Python process after install</td>
+      <td>Use <code>shutil.which("ollama") or "/usr/local/bin/ollama"</code></td>
+    </tr>
+    <tr>
+      <td>Connection refused on ollama API calls</td>
+      <td>Server started but not ready yet</td>
+      <td>Increase <code>time.sleep()</code> to 8–10 seconds</td>
+    </tr>
+    <tr>
+      <td>Model pull fails or times out</td>
+      <td>Colab network instability or model too large</td>
+      <td>Retry the pull cell; use smaller model like <code>phi3</code> or <code>llama3.2:1b</code></td>
+    </tr>
+    <tr>
+      <td>Colab runtime disconnects during model pull</td>
+      <td>Large model (7B+) takes too long</td>
+      <td>Stick to 3B models on free Colab; pull with a timeout wrapper</td>
+    </tr>
+    <tr>
+      <td>Install stderr shows <code>zstd: command not found</code></td>
+      <td>Setup cell ran in wrong order</td>
+      <td>Re-run the cell that installs zstd first, then re-run install</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ══════════════════════════════ FOOTER ══════════════════════════════ -->
+<footer>
+  <p>Made with 🦃 by <strong>Crunch</strong> — the CI imp that lives between build artifacts</p>
+  <p style="margin-top:0.4rem;font-size:0.8rem;">
+    Part of the <a href="https://github.com/Copilotclaw/trainingdemo" style="color:var(--accent);">trainingdemo</a> repo
+  </p>
+</footer>
+
+<script>
+  // RoughJS hero decoration
+  window.addEventListener('load', () => {
+    const hero = document.querySelector('.hero');
+    const canvas = document.getElementById('hero-canvas');
+    canvas.width = hero.offsetWidth;
+    canvas.height = hero.offsetHeight;
+    const rc = rough.canvas(canvas);
+    const w = canvas.width, h = canvas.height;
+    const opts = { roughness: 1.5, stroke: '#c9a84c', strokeWidth: 1.5, fill: 'none' };
+
+    // Scatter some rough circles and rectangles as decoration
+    rc.circle(60, 50, 60, opts);
+    rc.circle(w - 80, 30, 45, opts);
+    rc.rectangle(w - 160, h - 70, 100, 50, opts);
+    rc.circle(120, h - 40, 35, opts);
+    rc.rectangle(30, h - 80, 60, 40, opts);
+    rc.line(w * 0.3, 10, w * 0.45, 30, opts);
+    rc.line(w * 0.55, h - 20, w * 0.7, h - 5, opts);
+  });
+</script>
+</body>
+</html>
