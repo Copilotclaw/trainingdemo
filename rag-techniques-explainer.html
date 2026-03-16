@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced RAG Techniques with Local Models — Explainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.min.js"></script>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --surface: #ffffff;
+    --ink: #1a1a2e;
+    --muted: #6b7280;
+    --accent: #7c3aed;
+    --accent2: #0ea5e9;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --accent5: #ef4444;
+    --border: #e5e7eb;
+    --code-bg: #1e1e2e;
+    --code-fg: #cdd6f4;
+    --c-yellow: #fef9c3;
+    --c-blue: #dbeafe;
+    --c-green: #dcfce7;
+    --c-pink: #fce7f3;
+    --c-purple: #ede9fe;
+    --c-orange: #ffedd5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); line-height: 1.7; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(250,249,246,0.95); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 2rem; display: flex; align-items: center; gap: 2rem;
+  }
+  nav .brand { font-family: 'Caveat', cursive; font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.4rem 1rem; border-radius: 8px;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    text-decoration: none !important;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #6d28d9; transform: translateY(-1px); }
+  .btn-outline { border: 2px solid var(--ink); background: white; color: var(--ink); }
+  .btn-outline:hover { background: var(--ink); color: white; }
+  .btn-colab { background: #f9ab00; color: #1a1a2e; }
+  .btn-colab:hover { background: #e09800; transform: translateY(-1px); }
+
+  .hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white; padding: 5rem 2rem 3rem; text-align: center; position: relative; overflow: hidden;
+  }
+  .hero-emoji { font-size: 4rem; margin-bottom: 1rem; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 600; margin-bottom: 0.5rem; }
+  .hero h1 span { color: #a78bfa; }
+  .hero .tagline { font-size: 1.15rem; color: rgba(255,255,255,0.75); max-width: 600px; margin: 0 auto 2rem; }
+  .hero-pills { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
+  .pill {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: white; padding: 0.35rem 0.9rem; border-radius: 9999px; font-size: 0.82rem;
+  }
+  .hero-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+
+  .section { padding: 3rem 0; }
+  .section-title {
+    font-family: 'Caveat', cursive; font-size: 2rem; font-weight: 700;
+    margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+
+  .why-box {
+    background: var(--c-blue); border: 2.5px solid var(--ink);
+    border-radius: 16px; padding: 2rem; position: relative;
+  }
+  .why-box p { font-size: 1.05rem; line-height: 1.8; }
+
+  .learn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+  .learn-item {
+    background: white; border: 2px solid var(--ink); border-radius: 12px;
+    padding: 1rem; text-align: center; font-size: 0.9rem; font-weight: 500;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .learn-item::before { content: "✓ "; color: var(--accent3); font-weight: 700; }
+
+  .steps-list { display: flex; flex-direction: column; gap: 1.5rem; }
+  .step-card {
+    display: grid; grid-template-columns: 60px 1fr; gap: 1.5rem;
+    border: 2.5px solid var(--ink); border-radius: 16px; padding: 1.5rem;
+    position: relative; overflow: hidden;
+  }
+  .step-card.yellow { background: var(--c-yellow); }
+  .step-card.blue { background: var(--c-blue); }
+  .step-card.green { background: var(--c-green); }
+  .step-card.pink { background: var(--c-pink); }
+  .step-card.purple { background: var(--c-purple); }
+  .step-card.orange { background: var(--c-orange); }
+  .step-num {
+    width: 52px; height: 52px; background: var(--ink); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-family: 'Caveat', cursive; font-size: 1.6rem; font-weight: 700; flex-shrink: 0;
+  }
+  .step-card h3 { font-size: 1.2rem; margin-bottom: 0.4rem; }
+  .step-card p { color: #374151; font-size: 0.95rem; }
+
+  .concepts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+  .concept-card {
+    background: white; border: 2px solid var(--ink); border-radius: 12px;
+    padding: 1.25rem; box-shadow: 3px 3px 0 #d1d5db;
+  }
+  .concept-card .term {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
+    font-weight: 600; color: var(--accent); margin-bottom: 0.4rem;
+  }
+  .concept-card .def { font-size: 0.88rem; color: var(--muted); }
+
+  .meta-bar {
+    display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center;
+    background: white; border: 2px solid var(--border); border-radius: 16px;
+    padding: 1.5rem; margin: 2rem 0;
+  }
+  .meta-item { text-align: center; }
+  .meta-item .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .meta-item .value { font-size: 1.1rem; font-weight: 600; margin-top: 0.2rem; }
+
+  .prereqs-list { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .prereq-tag {
+    background: var(--c-orange); border: 2px solid var(--ink);
+    border-radius: 8px; padding: 0.3rem 0.75rem; font-size: 0.85rem; font-weight: 500;
+  }
+
+  .cta-box {
+    background: linear-gradient(135deg, #7c3aed, #0ea5e9);
+    border-radius: 20px; padding: 3rem 2rem; text-align: center; color: white; margin: 3rem 0;
+  }
+  .cta-box h2 { font-family: 'Caveat', cursive; font-size: 2rem; margin-bottom: 0.5rem; }
+  .cta-box p { opacity: 0.85; margin-bottom: 1.5rem; }
+  .cta-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+
+  footer {
+    border-top: 1px solid var(--border); padding: 2rem; text-align: center;
+    color: var(--muted); font-size: 0.85rem;
+  }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">🦃 trainingdemo</span>
+  <div style="margin-left:auto;display:flex;gap:0.75rem">
+    <a href="https://github.com/Copilotclaw/trainingdemo" class="btn btn-outline">GitHub</a>
+    <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/rag-techniques-ollama.ipynb" target="_blank" class="btn btn-colab">🚀 Open in Colab</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-emoji">🔍</div>
+  <h1>Advanced RAG Techniques with Local <span>Models</span></h1>
+  <p class="tagline">Master six powerful retrieval techniques that combine semantic search with local LLMs for intelligent document understanding.</p>
+  <div class="hero-pills">
+    <span class="pill">⏱ ~45 minutes</span>
+    <span class="pill">📊 Intermediate</span>
+    <span class="pill">📓 Jupyter Notebook</span>
+  </div>
+  <div class="hero-actions">
+    <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/rag-techniques-ollama.ipynb" target="_blank" class="btn btn-colab">🚀 Open in Colab</a>
+    <a href="https://github.com/Copilotclaw/trainingdemo" class="btn btn-outline" style="color:white;border-color:rgba(255,255,255,0.4)">📁 View Source</a>
+  </div>
+</section>
+
+<main class="container">
+
+  <!-- Meta bar -->
+  <div class="meta-bar">
+    <div class="meta-item"><div class="label">Time</div><div class="value">⏱ ~45 minutes</div></div>
+    <div class="meta-item"><div class="label">Difficulty</div><div class="value">Intermediate</div></div>
+    <div class="meta-item"><div class="label">Platform</div><div class="value">Google Colab</div></div>
+    <div class="meta-item"><div class="label">Cost</div><div class="value">Free 🎉</div></div>
+  </div>
+
+  <!-- Why -->
+  <div class="section">
+    <h2 class="section-title">💡 Why this matters</h2>
+    <div class="why-box">
+      <p>RAG systems power modern AI assistants and search engines by combining retrieval accuracy with language model reasoning. These techniques help AI systems access up-to-date information and domain-specific knowledge without retraining models.</p>
+    </div>
+  </div>
+
+  <!-- What you'll learn -->
+  <div class="section">
+    <h2 class="section-title">🎯 What you'll learn</h2>
+    <div class="learn-grid">
+      <div class="learn-item">Dense embedding retrieval using FAISS for semantic similarity</div>
+<div class="learn-item">Classic BM25 keyword-based document ranking</div>
+<div class="learn-item">Advanced techniques like HyDE and MultiQuery for better recall</div>
+<div class="learn-item">Cross-encoder re-ranking for improved result quality</div>
+    </div>
+  </div>
+
+  <!-- Prerequisites -->
+  <div class="section">
+  <h2 class="section-title">📋 Prerequisites</h2>
+  <div class="prereqs-list"><span class="prereq-tag">Basic Python programming knowledge</span>
+<span class="prereq-tag">Understanding of machine learning concepts</span></div>
+</div>
+
+  <!-- Steps -->
+  <div class="section">
+    <h2 class="section-title">🗺️ What we do — step by step</h2>
+    <div class="steps-list">
+      <div class="step-card yellow">
+  <div class="step-num">1</div>
+  <div>
+    <h3>Environment Setup</h3>
+    <p>Install all necessary dependencies including sentence-transformers, FAISS, BM25, and configure Ollama with the Llama 3.2 model for local processing.</p>
+  </div>
+</div>
+<div class="step-card blue">
+  <div class="step-num">2</div>
+  <div>
+    <h3>Model Loading & Corpus Preparation</h3>
+    <p>Load embedding models, cross-encoders, and prepare a sample corpus of technical documents about RAG techniques for experimentation.</p>
+  </div>
+</div>
+<div class="step-card green">
+  <div class="step-num">3</div>
+  <div>
+    <h3>Dense Embedding Retrieval</h3>
+    <p>Implement semantic search using sentence transformers and FAISS to find documents based on meaning rather than keywords.</p>
+  </div>
+</div>
+<div class="step-card pink">
+  <div class="step-num">4</div>
+  <div>
+    <h3>BM25 Sparse Retrieval</h3>
+    <p>Compare traditional keyword-based retrieval using BM25 algorithm that works well with exact term matching.</p>
+  </div>
+</div>
+<div class="step-card purple">
+  <div class="step-num">5</div>
+  <div>
+    <h3>HyDE - Hypothetical Document Embeddings</h3>
+    <p>Generate hypothetical answers with LLMs and use their embeddings to improve search relevance through semantic understanding.</p>
+  </div>
+</div>
+<div class="step-card orange">
+  <div class="step-num">6</div>
+  <div>
+    <h3>MultiQuery Expansion</h3>
+    <p>Transform single queries into multiple variations to capture different ways users might express the same intent.</p>
+  </div>
+</div>
+<div class="step-card yellow">
+  <div class="step-num">7</div>
+  <div>
+    <h3>Step-Back Abstraction</h3>
+    <p>Use LLMs to create broader conceptual queries that help surface foundational context for complex questions.</p>
+  </div>
+</div>
+<div class="step-card blue">
+  <div class="step-num">8</div>
+  <div>
+    <h3>Re-Ranking Results</h3>
+    <p>Apply cross-encoders to re-score retrieved documents for final ranking using more sophisticated pairwise comparisons.</p>
+  </div>
+</div>
+    </div>
+  </div>
+
+  <!-- Key concepts -->
+  <div class="section">
+  <h2 class="section-title">🔑 Key concepts</h2>
+  <div class="concepts-grid"><div class="concept-card"><div class="term">RAG (Retrieval-Augmented Generation)</div><div class="def">A technique that combines document retrieval with language models to provide accurate, context-aware responses.</div></div>
+<div class="concept-card"><div class="term">Dense Embeddings</div><div class="def">High-dimensional vector representations where semantically similar texts have similar vector values.</div></div>
+<div class="concept-card"><div class="term">FAISS</div><div class="def">Facebook's library for efficient similarity search and clustering of dense vectors.</div></div>
+<div class="concept-card"><div class="term">BM25</div><div class="def">A classic information retrieval algorithm that ranks documents based on term frequency and document length.</div></div>
+<div class="concept-card"><div class="term">HyDE</div><div class="def">Hypothetical Document Embeddings that generate a fake answer and use its embedding for retrieval.</div></div>
+<div class="concept-card"><div class="term">Cross-Encoder</div><div class="def">A neural network that takes both query and document as input to compute their relevance score.</div></div></div>
+</div>
+
+  <!-- CTA -->
+  <div class="cta-box">
+    <h2>Ready to dive in?</h2>
+    <p>No install needed — runs entirely in your browser via Google Colab.</p>
+    <div class="cta-actions">
+      <a href="https://colab.research.google.com/github/Copilotclaw/trainingdemo/blob/main/rag-techniques-ollama.ipynb" target="_blank" class="btn btn-colab" style="font-size:1rem;padding:0.75rem 1.75rem">
+        🚀 Open in Colab — it's free!
+      </a>
+      <a href="https://github.com/Copilotclaw/trainingdemo" class="btn" style="background:rgba(255,255,255,0.15);color:white;font-size:1rem;padding:0.75rem 1.75rem">
+        📁 Browse All Notebooks
+      </a>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p>Generated by <a href="https://github.com/Copilotclaw/copilotclaw">🦃 Crunch</a> — AI agent @ Copilotclaw &nbsp;·&nbsp;
+  <a href="https://github.com/Copilotclaw/trainingdemo">trainingdemo</a></p>
+</footer>
+
+</body>
+</html>
