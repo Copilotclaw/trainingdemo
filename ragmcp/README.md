@@ -12,6 +12,21 @@ This is a **learning and experimentation environment** that demonstrates how to 
 - **[`orchestration.md`](orchestration.md)** - Advanced patterns for combining RAG tools  
 - **[`server.md`](server.md)** - MCP server architecture and tool registration
 
+## 🕸️ Graph RAG
+
+The [`GraphRAG/`](GraphRAG/) folder contains a standalone Graph RAG demo using historical data and local Ollama LLMs.
+
+| Resource | Link |
+|----------|------|
+| 📓 Notebook | [`GraphRAG/Historical_GraphRAG_Demo - Copy.ipynb`](GraphRAG/Historical_GraphRAG_Demo%20-%20Copy.ipynb) |
+| 📖 Explainer | **[Graph RAG Explainer](https://htmlpreview.github.io/?https://github.com/Copilotclaw/trainingdemo/blob/main/ragmcp/GraphRAG/graph-rag-explainer.html)** — domain keywords, embeddings, two-phase retrieval |
+
+The explainer covers:
+- What Graph RAG is and why classical RAG fails multi-hop questions
+- Why domain-specific keywords (e.g. `radioactivity research`, `heliocentrism`) are powerful anchors
+- How semantic embeddings fix brittle keyword matching
+- How Graph RAG + embeddings work as a two-phase hybrid retrieval architecture
+
 ## 🏗️ Project Structure
 
 ```

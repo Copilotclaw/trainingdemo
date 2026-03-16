@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Graph RAG Explainer — Knowledge Graphs + Embeddings</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #222535;
+      --border: #2e3250;
+      --accent: #6c8ef5;
+      --accent2: #a78bfa;
+      --green: #4ade80;
+      --orange: #fb923c;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --code-bg: #131620;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 3rem;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #6c8ef520, #a78bfa20);
+      border: 1px solid #6c8ef540;
+      color: var(--accent);
+      border-radius: 99px;
+      padding: 0.3rem 1rem;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      color: var(--muted);
+      font-size: 1.1rem;
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    /* Section */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-number {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .section h2 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .section p {
+      color: #c4cbe0;
+      margin-bottom: 1rem;
+    }
+    .section p:last-child { margin-bottom: 0; }
+
+    /* Code blocks */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.2rem 1.4rem;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+      line-height: 1.6;
+      margin: 1rem 0;
+    }
+    code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.15em 0.4em;
+      font-size: 0.88em;
+      font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+      color: #a5b4fc;
+    }
+    pre code { background: none; border: none; padding: 0; font-size: inherit; }
+
+    .kw   { color: #818cf8; }  /* keywords */
+    .fn   { color: #34d399; }  /* functions */
+    .str  { color: #fbbf24; }  /* strings */
+    .cmt  { color: #475569; font-style: italic; } /* comments */
+    .num  { color: #fb923c; }  /* numbers */
+    .ent  { color: #f472b6; }  /* entities */
+    .rel  { color: #38bdf8; }  /* relations */
+    .val  { color: #a3e635; }  /* values/objects */
+
+    /* Callout boxes */
+    .callout {
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      margin: 1rem 0;
+      border-left: 4px solid;
+      font-size: 0.95rem;
+    }
+    .callout.info  { background: #1e3a5f20; border-color: var(--accent); }
+    .callout.warn  { background: #78350f20; border-color: var(--orange); }
+    .callout.good  { background: #14532d20; border-color: var(--green); }
+    .callout.insight { background: #4c1d9520; border-color: var(--accent2); }
+    .callout strong { display: block; margin-bottom: 0.3rem; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    th {
+      background: var(--surface2);
+      color: var(--accent);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.6rem 0.9rem;
+      border: 1px solid var(--border);
+    }
+    td {
+      padding: 0.55rem 0.9rem;
+      border: 1px solid var(--border);
+      color: #c4cbe0;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #ffffff05; }
+    td.hit  { color: var(--green); }
+    td.miss { color: var(--red);   }
+
+    /* Graph viz */
+    .graph-flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    .node {
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      padding: 0.3rem 0.7rem;
+      color: var(--accent);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .node.anchor { border-color: var(--yellow); color: var(--yellow); }
+    .node.target { border-color: var(--green);  color: var(--green);  }
+    .node.miss   { border-color: var(--red);    color: var(--red); opacity: 0.6; }
+    .arrow { color: var(--muted); font-size: 0.9rem; }
+    .edge-label {
+      font-size: 0.7rem;
+      color: var(--rel);
+      background: #0a0c14;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1rem 0.4rem;
+    }
+
+    /* Phase layout */
+    .phases { display: grid; gap: 1rem; margin: 1rem 0; }
+    .phase {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+    }
+    .phase-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .phase-badge {
+      background: var(--accent);
+      color: #000;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    /* TOC */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+    }
+    .toc h3 { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.8rem; }
+    .toc a {
+      display: block;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 0.25rem 0;
+      font-size: 0.95rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .toc a:last-child { border-bottom: none; }
+    .toc a:hover { color: var(--accent2); }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    h3 { color: var(--accent2); font-size: 1.05rem; margin: 1.2rem 0 0.5rem; }
+
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 1.7rem; }
+      .section { padding: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="badge">📚 RAG Techniques Series</div>
+    <h1>Graph RAG — Knowledge Graphs<br/>Meet Language Models</h1>
+    <p>How to combine knowledge graphs, domain-specific keywords, and semantic embeddings for multi-hop reasoning that classical RAG can't do.</p>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>Contents</h3>
+    <a href="#section1">1 — What is Graph RAG? (and why classical RAG fails multi-hop questions)</a>
+    <a href="#section2">2 — Why domain-specific keywords are a great plus in Graph RAG</a>
+    <a href="#section3">3 — How semantic embeddings improve keyword search</a>
+    <a href="#section4">4 — Graph RAG + classical embeddings working hand in hand</a>
+  </div>
+
+  <!-- Section 1 -->
+  <div class="section" id="section1">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>What is Graph RAG?</h2>
+    </div>
+
+    <p>Retrieval-Augmented Generation (RAG) traditionally relies on vector embeddings to match user queries with relevant document chunks. While effective for semantic similarity, classical RAG struggles significantly with <strong>multi-hop reasoning</strong> — questions requiring connections across disjointed pieces of information. Graph RAG solves this by structuring data into a knowledge graph, enabling explicit relationship traversal rather than mere semantic matching.</p>
+
+    <div class="callout warn">
+      <strong>⚠️ The Classical RAG Problem</strong>
+      Consider this three-sentence corpus and the question below.
+    </div>
+
+    <pre><code><span class="cmt"># The dataset</span>
+texts = [
+    <span class="str">"Albert Einstein developed the theory of relativity and influenced quantum mechanics."</span>,
+    <span class="str">"The Manhattan Project was a secret U.S. project during WWII that developed the atomic bomb."</span>,
+    <span class="str">"The Manhattan Project researched topics like the theory of relativity and quantum mechanics."</span>
+]
+
+question = <span class="str">"How did Albert Einstein contribute to the atomic bomb?"</span></code></pre>
+
+    <p>In the classical workflow, the system embeds the question and retrieves top-k chunks by cosine similarity. The top chunks mention Einstein and relativity, or separately mention the atomic bomb — but <strong>no single chunk directly connects them</strong>. The semantic distance between "Einstein" and "atomic bomb" is large without intermediate context. The LLM receives fragmented evidence and either hallucinates or says it doesn't know.</p>
+
+    <div class="callout info">
+      <strong>🔗 How Graph RAG bridges the gap</strong>
+      Graph RAG extracts structured triples from the corpus and builds a traversable knowledge graph.
+    </div>
+
+    <pre><code><span class="cmt"># Triples extracted by LLM during indexing</span>
+(<span class="ent">Albert Einstein</span>,     <span class="rel">developed</span>,          <span class="val">theory of relativity</span>)
+(<span class="ent">Albert Einstein</span>,     <span class="rel">influenced</span>,         <span class="val">quantum mechanics</span>)
+(<span class="ent">Manhattan Project</span>,   <span class="rel">researched</span>,         <span class="val">theory of relativity</span>)
+(<span class="ent">Manhattan Project</span>,   <span class="rel">researched</span>,         <span class="val">quantum mechanics</span>)
+(<span class="ent">Manhattan Project</span>,   <span class="rel">developed</span>,          <span class="val">atomic bomb</span>)
+(<span class="ent">Manhattan Project</span>,   <span class="rel">was</span>,                <span class="val">secret U.S. project during WWII</span>)</code></pre>
+
+    <p>When the question arrives, Graph RAG detects the anchor entity <code>Albert Einstein</code> and traverses the graph to depth 2:</p>
+
+    <div class="graph-flow">
+      <div class="node anchor">Albert Einstein</div>
+      <span class="arrow">→</span>
+      <div class="edge-label">developed</div>
+      <span class="arrow">→</span>
+      <div class="node">theory of relativity</div>
+      <span class="arrow">→</span>
+      <div class="edge-label">researched by</div>
+      <span class="arrow">→</span>
+      <div class="node">Manhattan Project</div>
+      <span class="arrow">→</span>
+      <div class="edge-label">developed</div>
+      <span class="arrow">→</span>
+      <div class="node target">atomic bomb</div>
+    </div>
+
+    <p>The multi-hop path <em>Einstein → theory of relativity → Manhattan Project → atomic bomb</em> is explicitly surfaced. The LLM now receives the complete logical chain as structured context and can answer confidently without any hallucination. This is what Graph RAG was built for.</p>
+
+    <div class="callout good">
+      <strong>✅ Key insight</strong>
+      Graph RAG doesn't search for similarity — it navigates logical structure. Each edge is a verified fact from the corpus, not a statistical proximity score.
+    </div>
+  </div>
+
+  <!-- Section 2 -->
+  <div class="section" id="section2">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Why Domain-Specific Keywords Are a Great Plus in Graph RAG</h2>
+    </div>
+
+    <p>In Graph RAG systems, <strong>anchor detection</strong> is the critical step of identifying the correct entity in the knowledge graph to initiate traversal. Generic NLP often fails here, extracting broad nouns that dilute retrieval precision. Domain-specific keywords serve as high-fidelity anchors, ensuring the system navigates directly to relevant subgraphs rather than drowning in semantic noise.</p>
+
+    <p>Consider the entity <code>radioactivity research</code> derived from Marie Curie's work. As an anchor, this term links exclusively to Curie, polonium, and radium. By contrast, a generic anchor like <code>research</code> connects to every scientist in the dataset, producing a massive, unfocused subgraph. <strong>Specificity dictates accuracy.</strong></p>
+
+    <h3>🔍 Comparison: Generic vs. Domain-Specific Keywords</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>User Query</th>
+          <th>Generic Keyword</th>
+          <th>Domain-Specific Keyword</th>
+          <th>Correct Anchor</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>"Who advanced our understanding of radioactive materials?"</td>
+          <td class="miss">materials → noise</td>
+          <td class="hit">radioactivity research ✓</td>
+          <td>Marie Curie</td>
+        </tr>
+        <tr>
+          <td>"Who challenged the geocentric model?"</td>
+          <td class="miss">model → software? ✗</td>
+          <td class="hit">heliocentrism ✓</td>
+          <td>Galileo Galilei</td>
+        </tr>
+        <tr>
+          <td>"Who developed AC power?"</td>
+          <td class="miss">power → political? ✗</td>
+          <td class="hit">alternating current (AC) electricity systems ✓</td>
+          <td>Nikola Tesla</td>
+        </tr>
+        <tr>
+          <td>"What theory did Einstein publish?"</td>
+          <td class="miss">theory → philosophy? ✗</td>
+          <td class="hit">theory of relativity ✓</td>
+          <td>Albert Einstein</td>
+        </tr>
+        <tr>
+          <td>"Who programmed the Analytical Engine?"</td>
+          <td class="miss">engine → locomotive? ✗</td>
+          <td class="hit">Analytical Engine ✓</td>
+          <td>Ada Lovelace</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>💡 Domain Keywords Reduce Ambiguity</h3>
+    <p>Domain-specific terms dramatically reduce polysemy. In a general corpus, "relativity" might refer to social theories or philosophical concepts. The specific phrase <code>theory of relativity</code> is unambiguous — it maps directly to Einstein and physics-related nodes. Similarly, <code>alternating current (AC) electricity systems</code> is unambiguous, while "electricity" alone would match Tesla, Edison, Faraday, and dozens of other nodes.</p>
+
+    <pre><code><span class="cmt"># This is the known_entities.json used by the notebook for anchor matching</span>
+known_entities = [
+    <span class="str">"Ada Lovelace"</span>, <span class="str">"Albert Einstein"</span>, <span class="str">"Alexander Fleming"</span>,
+    <span class="str">"Analytical Engine"</span>,    <span class="cmt"># ← compound noun preserved</span>
+    <span class="str">"Apollo 11"</span>, <span class="str">"Catholic Church"</span>, <span class="str">"Charles Babbage"</span>,
+    <span class="str">"Galileo Galilei"</span>, <span class="str">"Isaac Newton"</span>, <span class="str">"Manhattan Project"</span>,
+    <span class="str">"Marie Curie"</span>, <span class="str">"Nikola Tesla"</span>, <span class="str">"atomic bomb"</span>,
+    <span class="str">"alternating current (AC) electricity systems"</span>,  <span class="cmt"># ← full domain term</span>
+    <span class="str">"heliocentrism"</span>,            <span class="cmt"># ← specific concept, not "model"</span>
+    <span class="str">"polonium"</span>, <span class="str">"quantum mechanics"</span>, <span class="str">"radioactivity research"</span>,
+    <span class="str">"radium"</span>, <span class="str">"the theory of relativity"</span>
+]</code></pre>
+
+    <div class="callout insight">
+      <strong>🧠 How domain keywords are built</strong>
+      They come from two sources: (1) pre-built entity lists maintained by domain experts (like <code>known_entities.json</code>), or (2) LLM-extracted entities during indexing, where the LLM is explicitly instructed to preserve compound nouns and full-phrase concepts rather than splitting them into generic tokens. The notebook uses both: a seeded entity list plus LLM discovery during triple extraction.
+    </div>
+  </div>
+
+  <!-- Section 3 -->
+  <div class="section" id="section3">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>How Semantic Embeddings Improve Keyword Search in Graph RAG</h2>
+    </div>
+
+    <p>Exact keyword matching is inherently brittle within knowledge graphs. Consider a user asking about <em>"nuclear weapons research"</em> — the graph contains nodes for <code>atomic bomb</code> and <code>Manhattan Project</code>, but no node labeled "nuclear weapons research" exists. Exact match fails silently. Similarly, a query about <em>"radioactive elements"</em> will not match stored entities like <code>polonium</code>, <code>radium</code>, or <code>radioactivity research</code>.</p>
+
+    <div class="callout warn">
+      <strong>⚠️ The exact-match trap</strong>
+      The user speaks in their vocabulary. The graph is built in the corpus vocabulary. These never fully align. Bridging that gap is the job of embeddings.
+    </div>
+
+    <h3>🔢 Embedding-Based Anchor Detection</h3>
+    <p>The solution: embed the query <em>and all known graph entities</em> into the same vector space. Find top-k entity candidates by cosine similarity. Even when wording diverges, semantically related concepts cluster together.</p>
+
+    <pre><code><span class="cmt"># Conceptual example — embedding similarity scores</span>
+query = <span class="str">"nuclear weapons"</span>
+top_k_entities = [
+    (<span class="str">"atomic bomb"</span>,                  <span class="num">0.89</span>),   <span class="cmt"># ← strong match</span>
+    (<span class="str">"Manhattan Project"</span>,              <span class="num">0.81</span>),   <span class="cmt"># ← strong match</span>
+    (<span class="str">"World War II"</span>,                   <span class="num">0.72</span>),   <span class="cmt"># ← contextual match</span>
+    (<span class="str">"the theory of relativity"</span>,        <span class="num">0.41</span>),   <span class="cmt"># ← weak, skip</span>
+]
+
+query = <span class="str">"radioactive elements"</span>
+top_k_entities = [
+    (<span class="str">"radioactivity research"</span>,          <span class="num">0.91</span>),   <span class="cmt"># ← strong match</span>
+    (<span class="str">"radium"</span>,                          <span class="num">0.85</span>),   <span class="cmt"># ← strong match</span>
+    (<span class="str">"polonium"</span>,                        <span class="num">0.83</span>),   <span class="cmt"># ← strong match</span>
+    (<span class="str">"Marie Curie"</span>,                     <span class="num">0.74</span>),   <span class="cmt"># ← contextual match</span>
+]</code></pre>
+
+    <h3>📉 Impact on Traversal</h3>
+    <table>
+      <thead>
+        <tr><th>Query</th><th>Exact Match Result</th><th>Embedding Match Result</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>"nuclear weapons"</td>
+          <td class="miss">No node found → traversal fails ✗</td>
+          <td class="hit">Anchor: "atomic bomb" → Manhattan Project → Einstein ✓</td>
+        </tr>
+        <tr>
+          <td>"radioactive elements"</td>
+          <td class="miss">No node found → empty context ✗</td>
+          <td class="hit">Anchor: "radioactivity research" → Marie Curie → polonium, radium ✓</td>
+        </tr>
+        <tr>
+          <td>"laws of physics"</td>
+          <td class="miss">No node found → fails ✗</td>
+          <td class="hit">Anchor: "theory of relativity" → Einstein; "quantum mechanics" → Manhattan Project ✓</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>⚙️ The Embedding-Enhanced Anchor Algorithm</h3>
+    <pre><code><span class="kw">def</span> <span class="fn">find_anchor_entities</span>(query: str, known_entities: list, top_k: <span class="num">3</span>) -> list:
+    <span class="cmt"># 1. Embed the query</span>
+    q_vec = <span class="fn">embed</span>(query)
+
+    <span class="cmt"># 2. Embed all known graph entities (cache these — they don't change)</span>
+    entity_vecs = {e: <span class="fn">embed</span>(e) <span class="kw">for</span> e <span class="kw">in</span> known_entities}
+
+    <span class="cmt"># 3. Rank by cosine similarity</span>
+    scores = [(e, <span class="fn">cosine_sim</span>(q_vec, v)) <span class="kw">for</span> e, v <span class="kw">in</span> entity_vecs.items()]
+    scores.<span class="fn">sort</span>(key=<span class="kw">lambda</span> x: -x[<span class="num">1</span>])
+
+    <span class="cmt"># 4. Return top-k entity candidates as anchor seeds</span>
+    <span class="kw">return</span> [e <span class="kw">for</span> e, _ <span class="kw">in</span> scores[:top_k]]
+
+<span class="kw">def</span> <span class="fn">retrieve_with_graph</span>(query: str, G: nx.Graph, depth: <span class="num">2</span>) -> list:
+    anchors = <span class="fn">find_anchor_entities</span>(query, <span class="fn">list</span>(G.nodes), top_k=<span class="num">3</span>)
+    context = []
+    <span class="kw">for</span> anchor <span class="kw">in</span> anchors:
+        subgraph = <span class="fn">search_graph</span>(anchor, depth=depth)
+        context += [f<span class="str">"{u} {d['relation']} {v}"</span>
+                    <span class="kw">for</span> u, v, d <span class="kw">in</span> subgraph.<span class="fn">edges</span>(data=<span class="kw">True</span>)]
+    <span class="kw">return</span> context  <span class="cmt"># pass to LLM</span></code></pre>
+
+    <div class="callout insight">
+      <strong>🧠 Embeddings as the "entry point navigator"</strong>
+      The graph's value is entirely in its traversal capability — but you can only exploit it if you land on the right starting node. Semantic embeddings are the navigation layer that bridges natural language queries to structured graph topology. Without them, graph traversal is only reachable via exact terminology.
+    </div>
+  </div>
+
+  <!-- Section 4 -->
+  <div class="section" id="section4">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>Graph RAG + Classical Embeddings — Two-Phase Retrieval</h2>
+    </div>
+
+    <p>The most powerful RAG architecture combines both approaches in a <strong>two-phase retrieval pipeline</strong>. Pure embeddings excel at semantic similarity but fail at multi-hop reasoning. Pure graph retrieval offers rigorous reasoning chains but fails when query vocabulary diverges from graph terminology. Together, they cover each other's blind spots.</p>
+
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-title"><span class="phase-badge">Phase 1</span> Semantic Entry — Classical Embeddings</div>
+        <p style="color:var(--muted);font-size:0.9rem;margin:0">Embed the user query. Search entity embedding index for top-k anchor candidates (semantic similarity). Optionally also search raw text chunk index for directly relevant passages. <strong>Output:</strong> ranked anchor candidates + optional direct context snippets.</p>
+      </div>
+      <div class="phase">
+        <div class="phase-title"><span class="phase-badge" style="background:var(--accent2)">Phase 2</span> Graph Expansion — Knowledge Graph Traversal</div>
+        <p style="color:var(--muted);font-size:0.9rem;margin:0">For each anchor candidate: traverse graph to depth <em>d</em>. Collect all (subject, relation, object) triples in the subgraph. These triples form structured factual context that vector search alone can never produce.</p>
+      </div>
+      <div class="phase">
+        <div class="phase-title"><span class="phase-badge" style="background:var(--green);color:#000">Phase 3</span> Context Fusion + LLM Generation</div>
+        <p style="color:var(--muted);font-size:0.9rem;margin:0">Merge Phase 1 direct passages + Phase 2 graph triples into a unified context window. LLM generates an answer grounded in both unstructured passages AND verified structured facts, significantly reducing hallucination risk.</p>
+      </div>
+    </div>
+
+    <h3>🔬 Worked Example</h3>
+    <p>Query: <em>"What scientific concepts connected Einstein to wartime research?"</em></p>
+
+    <pre><code><span class="cmt"># Phase 1 — Semantic search finds anchor candidates</span>
+anchors_phase1 = [
+    <span class="str">"Albert Einstein"</span>,       <span class="cmt"># sim: 0.88</span>
+    <span class="str">"theory of relativity"</span>,  <span class="cmt"># sim: 0.84</span>
+    <span class="str">"quantum mechanics"</span>,     <span class="cmt"># sim: 0.79</span>
+]
+
+<span class="cmt"># Phase 2 — Graph traversal from "Albert Einstein" (depth=2)</span>
+graph_triples = [
+    (<span class="str">"Albert Einstein"</span>,    <span class="str">"developed"</span>,    <span class="str">"theory of relativity"</span>),
+    (<span class="str">"Albert Einstein"</span>,    <span class="str">"influenced"</span>,   <span class="str">"quantum mechanics"</span>),
+    (<span class="str">"Manhattan Project"</span>,  <span class="str">"researched"</span>,   <span class="str">"theory of relativity"</span>),
+    (<span class="str">"Manhattan Project"</span>,  <span class="str">"researched"</span>,   <span class="str">"quantum mechanics"</span>),
+    (<span class="str">"Manhattan Project"</span>,  <span class="str">"developed"</span>,    <span class="str">"atomic bomb"</span>),
+    (<span class="str">"Manhattan Project"</span>,  <span class="str">"was"</span>,          <span class="str">"secret U.S. project during World War II"</span>),
+]
+
+<span class="cmt"># Phase 3 — Fused context sent to LLM</span>
+context = direct_passages + [<span class="str">f"{s} {r} {o}."</span> <span class="kw">for</span> s, r, o <span class="kw">in</span> graph_triples]
+<span class="cmt"># → LLM produces high-quality, multi-hop answer with zero hallucination</span></code></pre>
+
+    <h3>⚖️ When to Use Each Approach</h3>
+    <table>
+      <thead>
+        <tr><th>Scenario</th><th>Best Approach</th><th>Reason</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Simple factual lookup, low latency required</td>
+          <td>Pure Embeddings</td>
+          <td>Fast, single-hop, no graph needed</td>
+        </tr>
+        <tr>
+          <td>Structured domain, standardized terminology</td>
+          <td>Pure Graph RAG</td>
+          <td>Exact matches reliable, relationships explicit</td>
+        </tr>
+        <tr>
+          <td>Complex analytical questions, multi-entity</td>
+          <td class="hit">Hybrid (Phase 1+2+3) ✓</td>
+          <td>Semantic entry + logical expansion = maximum accuracy</td>
+        </tr>
+        <tr>
+          <td>Paraphrased queries in specialized domains</td>
+          <td class="hit">Hybrid (Phase 1+2+3) ✓</td>
+          <td>Embeddings bridge vocabulary gap; graph bridges reasoning gap</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout good">
+      <strong>✅ The bottom line</strong>
+      Classical embeddings handle <em>semantic flexibility</em> — they bridge vocabulary gaps and find related concepts. Graph traversal handles <em>logical rigor</em> — it navigates verified relationship chains that vector distances don't capture. Together they form a retrieval system that is both linguistically robust and factually precise. Neither is sufficient alone for complex, real-world queries.
+    </div>
+
+    <h3>🚀 Try it yourself</h3>
+    <p>The <a href="Historical_GraphRAG_Demo - Copy.ipynb" style="color:var(--accent)"><strong>Historical GraphRAG Demo notebook</strong></a> implements the full pipeline end-to-end using local Ollama LLMs — no API keys required. Start with the Einstein question, then try your own multi-hop queries to see the graph traversal in action.</p>
+  </div>
+
+  <footer>
+    Graph RAG Explainer · trainingdemo · <a href="../../README.md" style="color:var(--accent)">Back to Repository README</a>
+  </footer>
+
+</div>
+</body>
+</html>
