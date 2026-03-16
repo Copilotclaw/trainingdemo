@@ -2,6 +2,7 @@ langchain
 langchain-core
 langchain-openai
 langchain-community
+langchain-ollama
 pandas
 networkx
 python-dotenv
