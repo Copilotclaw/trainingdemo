@@ -606,6 +606,286 @@ context = direct_passages + [<span class="str">f"{s} {r} {o}."</span> <span clas
     <p>The <a href="Historical_GraphRAG_Demo - Copy.ipynb" style="color:var(--accent)"><strong>Historical GraphRAG Demo notebook</strong></a> implements the full pipeline end-to-end using local Ollama LLMs — no API keys required. Start with the Einstein question, then try your own multi-hop queries to see the graph traversal in action.</p>
   </div>
 
+  <!-- ── SECTION 5: On-the-fly dependency discovery ── -->
+  <div class="section">
+    <h2>5 · On-the-Fly Dependency Discovery via Multiple Queries</h2>
+    <p>
+      What if you don't have a pre-built knowledge graph at all? One lightweight alternative is to
+      <strong>discover dependencies dynamically</strong> by issuing multiple sequential LLM or retrieval
+      queries at runtime, each one informed by the answer to the previous one. No graph indexing step,
+      no triple extraction pipeline — just a loop.
+    </p>
+
+    <h3>🔄 How It Works</h3>
+    <div class="phase-box">
+      <div class="phase-title"><span class="phase-badge" style="background:var(--accent)">Step 1</span> Anchor Query — find the entry point</div>
+      <pre><code><span class="cmt"># Q1 — entry-point question</span>
+q1 = <span class="str">"What did Einstein contribute to nuclear physics?"</span>
+a1 = llm.query(vectorstore, q1)
+<span class="cmt"># a1 → "Special relativity showed mass-energy equivalence (E=mc²)"</span></code></pre>
+    </div>
+    <div class="phase-box">
+      <div class="phase-title"><span class="phase-badge" style="background:var(--accent2)">Step 2</span> Dependency Extraction — ask what concepts this answer depends on</div>
+      <pre><code><span class="cmt"># Extract entities / dependencies from a1</span>
+deps_prompt = <span class="str">f"List the key concepts mentioned in: '{a1}' as a comma-separated list."</span>
+deps = llm.complete(deps_prompt)
+<span class="cmt"># deps → "special relativity, mass-energy equivalence, E=mc²"</span></code></pre>
+    </div>
+    <div class="phase-box">
+      <div class="phase-title"><span class="phase-badge" style="background:var(--green);color:#000">Step 3</span> Chain — query each dependency, build a context window</div>
+      <pre><code>context_parts = [a1]
+<span class="kw">for</span> dep <span class="kw">in</span> deps.split(<span class="str">","</span>):
+    follow_up = <span class="str">f"How did {dep.strip()} connect to the Manhattan Project?"</span>
+    context_parts.append(llm.query(vectorstore, follow_up))
+
+<span class="cmt"># Final synthesis — all gathered context in one prompt</span>
+final_answer = llm.complete(<span class="str">"Using this context: "</span> + <span class="str">"\n"</span>.join(context_parts)
+                            + <span class="str">"\n\nExplain how Einstein's work led to atomic weapons."</span>)</code></pre>
+    </div>
+
+    <h3>🧪 Worked Example — Einstein → Manhattan Project</h3>
+    <table>
+      <thead>
+        <tr><th>Query #</th><th>Question</th><th>Key fact retrieved</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Q1</td><td>What did Einstein contribute to nuclear physics?</td><td>E=mc² → mass can become energy</td></tr>
+        <tr><td>Q2</td><td>How did E=mc² influence weapons research?</td><td>Quantified the energy density of fissile material</td></tr>
+        <tr><td>Q3</td><td>Who used that to design an atomic bomb?</td><td>Oppenheimer / Los Alamos team</td></tr>
+        <tr><td>Q4</td><td>What was the Manhattan Project?</td><td>US WWII program producing first nuclear weapons</td></tr>
+        <tr class="hit"><td>Synthesis</td><td colspan="2">LLM combines all four fragments into a coherent multi-hop answer ✓</td></tr>
+      </tbody>
+    </table>
+
+    <h3>⚖️ On-the-Fly Discovery vs. Real Graph RAG</h3>
+    <table>
+      <thead>
+        <tr><th>Dimension</th><th>On-the-Fly (Multi-Query)</th><th>Real Graph RAG</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Setup cost</td>
+          <td class="hit">Zero — no indexing ✓</td>
+          <td>High — extract triples, build graph</td>
+        </tr>
+        <tr>
+          <td>Query latency</td>
+          <td>High — N sequential LLM calls</td>
+          <td class="hit">Low — single graph traversal ✓</td>
+        </tr>
+        <tr>
+          <td>Depth of reasoning</td>
+          <td>Shallow (2–4 hops before drift)</td>
+          <td class="hit">Deep — 10+ hops reliably ✓</td>
+        </tr>
+        <tr>
+          <td>Reproducibility</td>
+          <td>Low — LLM picks different deps each run</td>
+          <td class="hit">High — graph is deterministic ✓</td>
+        </tr>
+        <tr>
+          <td>Hallucination risk</td>
+          <td>High — errors compound per hop</td>
+          <td class="hit">Low — traversal stays on verified edges ✓</td>
+        </tr>
+        <tr>
+          <td>Works without pre-built corpus</td>
+          <td class="hit">Yes — pure LLM ✓</td>
+          <td>No — requires structured graph store</td>
+        </tr>
+        <tr>
+          <td>Scales to large corpora</td>
+          <td>Poor — costs grow linearly with hops</td>
+          <td class="hit">Excellent — graph index is sublinear ✓</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout good">
+      <strong>✅ When on-the-fly discovery is the right choice</strong>
+      <ul style="margin:0.5em 0 0 1.2em">
+        <li><strong>Prototype / exploration</strong> — you need quick multi-hop answers before committing to graph indexing.</li>
+        <li><strong>Small corpora (&lt; 500 documents)</strong> — overhead of graph extraction isn't justified.</li>
+        <li><strong>One-off queries</strong> — the same topic won't be queried repeatedly, so a persistent graph adds no value.</li>
+        <li><strong>Dynamic content</strong> — documents change so frequently that maintaining a consistent graph is impractical.</li>
+      </ul>
+    </div>
+
+    <div class="callout warn">
+      <strong>⚠️ When to do real Graph RAG instead</strong>
+      <ul style="margin:0.5em 0 0 1.2em">
+        <li><strong>Production accuracy requirements</strong> — compounding LLM errors over multi-hop chains is unacceptable.</li>
+        <li><strong>Deep reasoning (5+ hops)</strong> — chain-of-queries drifts badly beyond 3–4 steps.</li>
+        <li><strong>High query volume</strong> — paying N×LLM-cost per query destroys economics; graph traversal is near-free after indexing.</li>
+        <li><strong>Auditable reasoning</strong> — the graph path is a literal citation trail; multi-query chains are not.</li>
+        <li><strong>Domain with stable ontology</strong> — medical, legal, scientific — where relationships are verifiable facts.</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <strong>💡 The practical rule of thumb</strong>
+      Multi-query chaining is a <em>proof-of-concept tool</em>. If you find yourself needing 3+ hops regularly, or accuracy matters, graduate to a real graph store. Think of on-the-fly discovery as scaffolding — useful while you're building, replaced once you're serious.
+    </div>
+  </div>
+
+  <!-- ── SECTION 6: Graph RAG landscape ── -->
+  <div class="section">
+    <h2>6 · Graph RAG Landscape: Open Source &amp; Commercial Offerings</h2>
+    <p>
+      Graph RAG has moved from research paper to production tooling fast. Here's a map of the current
+      ecosystem — what's free, what's managed, and where the tradeoffs sit.
+    </p>
+
+    <h3>🔓 Open-Source Options</h3>
+    <table>
+      <thead>
+        <tr><th>Tool</th><th>Graph backend</th><th>LLM integration</th><th>Sweet spot</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Microsoft GraphRAG</strong><br><span style="font-size:0.8em;color:var(--muted)">github.com/microsoft/graphrag</span></td>
+          <td>NetworkX / JSON</td>
+          <td>Azure OpenAI, local</td>
+          <td>Reference implementation; strong community indexing pipeline</td>
+        </tr>
+        <tr>
+          <td><strong>LlamaIndex KnowledgeGraph</strong><br><span style="font-size:0.8em;color:var(--muted)">docs.llamaindex.ai</span></td>
+          <td>NetworkX, Neo4j, Nebula</td>
+          <td>Any LlamaIndex LLM</td>
+          <td>Drop-in for existing LlamaIndex pipelines; minimal extra code</td>
+        </tr>
+        <tr>
+          <td><strong>LangChain Neo4jGraph</strong><br><span style="font-size:0.8em;color:var(--muted)">python.langchain.com</span></td>
+          <td>Neo4j (Cypher)</td>
+          <td>Any LangChain LLM</td>
+          <td>Full Cypher power; great if your team already knows Neo4j</td>
+        </tr>
+        <tr>
+          <td><strong>NebulaGraph + LlamaIndex</strong><br><span style="font-size:0.8em;color:var(--muted)">nebula-graph.io</span></td>
+          <td>NebulaGraph</td>
+          <td>LlamaIndex / LangChain</td>
+          <td>Distributed graphs; horizontal scale; good for very large corpora</td>
+        </tr>
+        <tr>
+          <td><strong>Graphiti</strong><br><span style="font-size:0.8em;color:var(--muted)">github.com/getzep/graphiti</span></td>
+          <td>Neo4j</td>
+          <td>OpenAI, Anthropic</td>
+          <td>Temporal graphs — entities evolve over time; great for agents with memory</td>
+        </tr>
+        <tr>
+          <td><strong>Our demo notebook</strong><br><span style="font-size:0.8em;color:var(--muted)">ragmcp/GraphRAG/</span></td>
+          <td>NetworkX (in-memory)</td>
+          <td>Ollama (local)</td>
+          <td>Zero cost, no API keys, runs on Colab free tier</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>☁️ Managed / Commercial Options</h3>
+    <table>
+      <thead>
+        <tr><th>Product</th><th>Vendor</th><th>Graph engine</th><th>Key differentiator</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Neo4j AuraDB + GenAI</strong></td>
+          <td>Neo4j</td>
+          <td>Neo4j (Cypher)</td>
+          <td>Fully managed; native vector + graph index; first-party LangChain/LlamaIndex connectors</td>
+        </tr>
+        <tr>
+          <td><strong>Amazon Neptune Analytics</strong></td>
+          <td>AWS</td>
+          <td>Neptune (openCypher / Gremlin)</td>
+          <td>Serverless graph analytics; integrates with Bedrock for RAG pipelines</td>
+        </tr>
+        <tr>
+          <td><strong>Azure AI Search + Knowledge Store</strong></td>
+          <td>Microsoft</td>
+          <td>Cosmos DB Gremlin / Azure Graph</td>
+          <td>Native integration with Azure OpenAI; enterprise security; co-designed with GraphRAG OSS</td>
+        </tr>
+        <tr>
+          <td><strong>Datastax Astra DB (Graph)</strong></td>
+          <td>DataStax</td>
+          <td>Apache Cassandra / DSE Graph</td>
+          <td>Combined vector + graph in one managed store; Cassandra familiarity</td>
+        </tr>
+        <tr>
+          <td><strong>TigerGraph ML Workbench</strong></td>
+          <td>TigerGraph</td>
+          <td>TigerGraph (GSQL)</td>
+          <td>Purpose-built for real-time graph ML; deep analytics at billion-edge scale</td>
+        </tr>
+        <tr>
+          <td><strong>Ontotext GraphDB</strong></td>
+          <td>Ontotext</td>
+          <td>RDF / SPARQL</td>
+          <td>Semantic web / ontology-first; great for knowledge management and compliance</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>📊 Open Source vs. Managed — Decision Matrix</h3>
+    <table>
+      <thead>
+        <tr><th>Factor</th><th>Open Source</th><th>Managed / Commercial</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Cost at zero scale</td>
+          <td class="hit">Free ✓</td>
+          <td>Free tier or credit-based</td>
+        </tr>
+        <tr>
+          <td>Cost at production scale</td>
+          <td>Infrastructure + ops labour</td>
+          <td class="hit">Predictable per-query pricing ✓</td>
+        </tr>
+        <tr>
+          <td>Data sovereignty / privacy</td>
+          <td class="hit">Full control — runs locally ✓</td>
+          <td>Cloud dependency (unless private-cloud option)</td>
+        </tr>
+        <tr>
+          <td>Setup time</td>
+          <td>Hours to days</td>
+          <td class="hit">Minutes ✓</td>
+        </tr>
+        <tr>
+          <td>Operational overhead</td>
+          <td>You manage backups, HA, scaling</td>
+          <td class="hit">Vendor manages ✓</td>
+        </tr>
+        <tr>
+          <td>Customisation</td>
+          <td class="hit">Unlimited — fork &amp; modify ✓</td>
+          <td>Constrained to vendor API surface</td>
+        </tr>
+        <tr>
+          <td>Enterprise support / SLA</td>
+          <td>Community only</td>
+          <td class="hit">SLAs, dedicated support ✓</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout good">
+      <strong>✅ Recommended starting path</strong>
+      <ol style="margin:0.5em 0 0 1.2em">
+        <li><strong>Experiment</strong> — use the notebook in this repo (NetworkX + Ollama, free, local).</li>
+        <li><strong>Prototype production</strong> — Microsoft GraphRAG OSS or LlamaIndex KG against a Neo4j AuraDB free tier.</li>
+        <li><strong>Scale to production</strong> — Neo4j AuraDB managed or Amazon Neptune Analytics for cloud-native deployments; TigerGraph for massive-scale analytics.</li>
+        <li><strong>Enterprise / regulated</strong> — Azure AI Search + Microsoft GraphRAG OSS (co-designed, best Microsoft stack integration) or Ontotext GraphDB for semantic-web / compliance needs.</li>
+      </ol>
+    </div>
+
+    <div class="callout">
+      <strong>💡 The fastest path to learning</strong>
+      Every managed offering above has a generous free tier. Start local with our notebook, then clone the same queries into Neo4j AuraDB free to see managed graph performance with zero infrastructure work. You'll understand the value proposition of a managed graph in about 30 minutes.
+    </div>
+  </div>
+
   <footer>
     Graph RAG Explainer · trainingdemo · <a href="../../README.md" style="color:var(--accent)">Back to Repository README</a>
   </footer>
