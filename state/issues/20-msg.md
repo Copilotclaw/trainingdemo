@@ -1,0 +1,174 @@
+bm25 explainer
+
+create a notebook as a bm25 explainer based on this content - link it to the readme 
+
+<html>
+<body>
+<!--StartFragment--><header class="mb-10" style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 40px; padding: 0px; color: rgb(226, 232, 240); font-family: Inter, system-ui, sans-serif; font-size: medium; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(15, 23, 42); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;"><h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-bright leading-tight mb-6" style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 24px; padding: 0px; font-size: 48px; font-weight: 800; line-height: 1.25; --tw-leading: 1.25; --tw-font-weight: 800; color: rgb(248, 250, 252);">BM25 vs Embeddings: Why Keyword Search Still Wins for Product Data</h1><div class="flex flex-wrap items-center gap-4 text-sm text-muted mb-6" style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 24px; padding: 0px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; font-size: 14px; line-height: 1.42857; color: rgb(148, 163, 184);"><span class="flex items-center gap-1.5" style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; display: flex; align-items: center; gap: 6px;"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>ai.rs</span><span class="flex items-center gap-1.5" style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; display: flex; align-items: center; gap: 6px;"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>Jan 29, 2026</span></div><div class="flex flex-wrap gap-2 mb-8" style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 32px; padding: 0px; display: flex; flex-wrap: wrap; gap: 8px;"><a href="https://ai.rs/filter?tag=rag" class="text-xs px-2.5 py-1 rounded-md bg-surface2/50 text-dim hover:text-muted transition-colors" style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; color: rgb(132, 148, 167); text-decoration: inherit; border-radius: 6px; background-color: oklab(0.371692 -0.00860068 -0.0381884 / 0.5); padding-inline: 10px; padding-block: 4px; font-size: 12px; line-height: 1.33333; transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 0.15s;">rag</a><a href="https://ai.rs/filter?tag=bm25" class="text-xs px-2.5 py-1 rounded-md bg-surface2/50 text-dim hover:text-muted transition-colors" style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; color: rgb(132, 148, 167); text-decoration: inherit; border-radius: 6px; background-color: oklab(0.371692 -0.00860068 -0.0381884 / 0.5); padding-inline: 10px; padding-block: 4px; font-size: 12px; line-height: 1.33333; transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 0.15s;">bm25</a><a href="https://ai.rs/filter?tag=embeddings" class="text-xs px-2.5 py-1 rounded-md bg-surface2/50 text-dim hover:text-muted transition-colors" style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; color: rgb(132, 148, 167); text-decoration: inherit; border-radius: 6px; background-color: oklab(0.371692 -0.00860068 -0.0381884 / 0.5); padding-inline: 10px; padding-block: 4px; font-size: 12px; line-height: 1.33333; transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 0.15s;">embeddings</a><a href="https://ai.rs/filter?tag=search" class="text-xs px-2.5 py-1 rounded-md bg-surface2/50 text-dim hover:text-muted transition-colors" style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; color: rgb(132, 148, 167); text-decoration: inherit; border-radius: 6px; background-color: oklab(0.371692 -0.00860068 -0.0381884 / 0.5); padding-inline: 10px; padding-block: 4px; font-size: 12px; line-height: 1.33333; transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 0.15s;">search</a><a href="https://ai.rs/filter?tag=benchmarks" class="text-xs px-2.5 py-1 rounded-md bg-surface2/50 text-dim hover:text-muted transition-colors" style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; color: rgb(132, 148, 167); text-decoration: inherit; border-radius: 6px; background-color: oklab(0.371692 -0.00860068 -0.0381884 / 0.5); padding-inline: 10px; padding-block: 4px; font-size: 12px; line-height: 1.33333; transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 0.15s;">benchmarks</a></div><div class="mb-10 rounded-2xl overflow-hidden bg-surface border border-border/50 p-6 flex justify-center" style="box-sizing: border-box; border: 1px solid oklab(0.445528 -0.00822476 -0.0365182 / 0.5); margin: 0px 0px 40px; padding: 24px; display: flex; justify-content: center; overflow: hidden; border-radius: 16px; background-color: rgb(30, 41, 59);"><object type="image/svg+xml" data="https://ai.rs/svg/bm25-vs-embeddings.svg" class="w-full max-w-lg" role="img" aria-label="BM25 vs Embeddings: Why Keyword Search Still Wins for Product Data illustration" style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; vertical-align: middle; display: block; width: 511.989px; max-width: 512px;"></object></div></header><div id="articleBody" class="prose-custom" style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; line-height: 1.8; font-size: 1.0625rem; color: rgb(203, 213, 225); font-family: Inter, system-ui, sans-serif; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(15, 23, 42); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;"><h2 id="heading-0-the-semantic-search-hype" style="box-sizing: border-box; border-width: 0px 0px 1px; border-style: solid; border-top-color: initial; border-right-color: initial; border-bottom-color: rgba(71, 85, 105, 0.3); border-left-color: initial; border-image: initial; margin: 2.5rem 0px 1rem; padding: 0px 0px 0.5rem; font-size: 1.625rem; font-weight: 700; color: rgb(248, 250, 252);">The Semantic Search Hype</h2><p style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 1.25rem; padding: 0px;">Every AI tutorial tells you to use embedding search. Convert your data to vectors, store them in a vector database, and enjoy "semantic understanding" that keyword search can't match.</p><p style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 1.25rem; padding: 0px;">But when we deployed both approaches against a real product catalog, the results told a different story.</p><h2 id="heading-1-the-experiment" style="box-sizing: border-box; border-width: 0px 0px 1px; border-style: solid; border-top-color: initial; border-right-color: initial; border-bottom-color: rgba(71, 85, 105, 0.3); border-left-color: initial; border-image: initial; margin: 2.5rem 0px 1rem; padding: 0px 0px 0.5rem; font-size: 1.625rem; font-weight: 700; color: rgb(248, 250, 252);">The Experiment</h2><p style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 1.25rem; padding: 0px;">We tested both search approaches on a production catalog of 2,000+ products across multiple categories:</p><p style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 1.25rem; padding: 0px;"><strong style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; font-weight: 600; color: rgb(248, 250, 252);">BM25 Setup:</strong></p><ul style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 1.25rem; padding: 0px 0px 0px 1.5rem; list-style: disc;"><li style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 0.5rem; padding: 0px; line-height: 1.7;">Multi-field weighted index (name 3x, brand 2x, category 2x, description 1x)</li><li style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 0.5rem; padding: 0px; line-height: 1.7;">Category alias mapping (natural language → taxonomy)</li><li style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 0.5rem; padding: 0px; line-height: 1.7;">No ML model required</li></ul><p style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 1.25rem; padding: 0px;"><strong style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; font-weight: 600; color: rgb(248, 250, 252);">Embedding Setup:</strong></p><ul style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 1.25rem; padding: 0px 0px 0px 1.5rem; list-style: disc;"><li style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 0.5rem; padding: 0px; line-height: 1.7;">Sentence transformer model (all-MiniLM-L6-v2)</li><li style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 0.5rem; padding: 0px; line-height: 1.7;">Product descriptions encoded to 384-dimensional vectors</li><li style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 0.5rem; padding: 0px; line-height: 1.7;">Cosine similarity search</li></ul><p style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 1.25rem; padding: 0px;"><strong style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; font-weight: 600; color: rgb(248, 250, 252);">Test queries:</strong><span> </span>200 real customer questions collected from user testing.</p><h2 id="heading-2-the-results" style="box-sizing: border-box; border-width: 0px 0px 1px; border-style: solid; border-top-color: initial; border-right-color: initial; border-bottom-color: rgba(71, 85, 105, 0.3); border-left-color: initial; border-image: initial; margin: 2.5rem 0px 1rem; padding: 0px 0px 0.5rem; font-size: 1.625rem; font-weight: 700; color: rgb(248, 250, 252);">The Results</h2>
+Metric | BM25 | Embeddings | Winner
+-- | -- | -- | --
+Exact product match (top 3) | 92% | 78% | BM25
+Category accuracy | 95% | 88% | BM25
+Price in results | 100% | 100% | Tie
+Handles vague queries | 71% | 85% | Embeddings
+Speed (per query) | < 1ms | 15-50ms | BM25
+Infrastructure needed | None | Embedding model | BM25
+
+<h2 id="heading-12-our-recommendation" style="box-sizing: border-box; border-width: 0px 0px 1px; border-style: solid; border-top-color: initial; border-right-color: initial; border-bottom-color: rgba(71, 85, 105, 0.3); border-left-color: initial; border-image: initial; margin: 2.5rem 0px 1rem; padding: 0px 0px 0.5rem; font-size: 1.625rem; font-weight: 700; color: rgb(248, 250, 252);">Our Recommendation</h2><p style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 1.25rem; padding: 0px;"><strong style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; font-weight: 600; color: rgb(248, 250, 252);">Start with BM25.</strong><span> </span>It's simpler, faster, and more accurate for product search. Add multi-field weighting and category aliases for 90%+ accuracy.</p><p style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 1.25rem; padding: 0px;"><strong style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; font-weight: 600; color: rgb(248, 250, 252);">Add embeddings later</strong><span> </span>if analytics show customers frequently use vague, intent-based queries that BM25 can't handle.</p><p style="box-sizing: border-box; border: 0px solid; margin: 0px 0px 1.25rem; padding: 0px;"><strong style="box-sizing: border-box; border: 0px solid; margin: 0px; padding: 0px; font-weight: 600; color: rgb(248, 250, 252);">Let the LLM do the heavy lifting.</strong><span> </span>Your fine-tuned model already has semantic understanding. Feed it BM25 results and let it reason about which products best answer the customer's question.</p></div></div><!--EndFragment-->
+</body>
+</html>
+
+BM25 vs Embeddings: Why Keyword Search Still Wins for Product Data
+ai.rs
+Jan 29, 2026
+[rag](https://ai.rs/filter?tag=rag)
+[bm25](https://ai.rs/filter?tag=bm25)
+[embeddings](https://ai.rs/filter?tag=embeddings)
+[search](https://ai.rs/filter?tag=search)
+[benchmarks](https://ai.rs/filter?tag=benchmarks)
+
+The Semantic Search Hype
+Every AI tutorial tells you to use embedding search. Convert your data to vectors, store them in a vector database, and enjoy "semantic understanding" that keyword search can't match.
+
+But when we deployed both approaches against a real product catalog, the results told a different story.
+
+The Experiment
+We tested both search approaches on a production catalog of 2,000+ products across multiple categories:
+
+BM25 Setup:
+
+Multi-field weighted index (name 3x, brand 2x, category 2x, description 1x)
+Category alias mapping (natural language → taxonomy)
+No ML model required
+Embedding Setup:
+
+Sentence transformer model (all-MiniLM-L6-v2)
+Product descriptions encoded to 384-dimensional vectors
+Cosine similarity search
+Test queries: 200 real customer questions collected from user testing.
+
+The Results
+Metric	BM25	Embeddings	Winner
+Exact product match (top 3)	92%	78%	BM25
+Category accuracy	95%	88%	BM25
+Price in results	100%	100%	Tie
+Handles vague queries	71%	85%	Embeddings
+Speed (per query)	< 1ms	15-50ms	BM25
+Infrastructure needed	None	Embedding model	BM25
+BM25 won on the metrics that matter most for e-commerce: finding the right product and getting the category right.
+
+Why BM25 Wins for Structured Data
+1. Products Have Consistent Names
+When a customer asks about "Merlot wine", the product is literally called "Merlot" in the database. There's no semantic gap to bridge.
+
+Query: "Merlot wine"
+BM25:  Finds "Merlot" (exact match, 100% confidence)
+Embed: Finds "Merlot" (0.89 similarity) + "Pinot Noir" (0.85) + "Cabernet" (0.82)
+ Copy
+BM25 gives a decisive match. Embeddings blur the boundaries between similar products.
+
+2. Field Weighting Adds Context
+With BM25, you can weight fields differently:
+
+"stainless steel cookware"
+
+BM25 with weights:
+  - name (3x):     "Stainless Steel Pan" → HIGH score
+  - category (2x):  "Cookware" → HIGH score
+  - description (1x): mentions steel → LOW score
+
+Result: Exact product match
+ Copy
+Embeddings flatten everything into a single vector, losing this structural information.
+
+3. Numbers and Codes Work Correctly
+Query: "model X-500"
+BM25:  Finds product X-500 (exact term match)
+Embed: Finds products with similar descriptions (X-500 is meaningless to the embedding model)
+ Copy
+BM25 handles SKUs, model numbers, prices, and alphanumeric codes that embeddings treat as noise.
+
+Where Embeddings Win
+Embeddings have a clear advantage for vague, intent-based queries:
+
+Query: "something refreshing for a hot day"
+BM25:  Matches on "refreshing" if it appears in descriptions
+Embed: Understands the concept and finds light wines, sparkling water, citrus drinks
+ Copy
+Query: "gift for someone who likes cooking"
+BM25:  Matches on "gift" and "cooking" separately
+Embed: Understands the gifting + cooking intent, finds cookware gift sets
+ Copy
+If your customers frequently use vague, conversational language, embeddings add value.
+
+The Hybrid Approach
+The best production systems use both:
+
+1. BM25 search → top 10 results (fast, precise)
+2. If BM25 results < 3 → fallback to embedding search
+3. Re-rank combined results by relevance
+ Copy
+But here's the key insight: when you have an LLM in the pipeline, the model itself acts as a re-ranker.
+
+The LLM receives the BM25 results and uses its own understanding to select the most relevant products for the response. You get semantic understanding from the LLM without needing a separate embedding search.
+
+Cost of Each Approach
+Component	BM25	Embeddings
+Runtime infrastructure	Zero	Embedding model (0.5-2 GB)
+Per-query compute	< 1ms CPU	15-50ms GPU
+Index update	Instant	Re-encode modified products
+Maintenance	None	Model version management
+Dependencies	Standard library	torch, transformers, vector DB
+BM25 adds zero complexity to your stack. It runs in any language with a standard library. No GPU, no model downloads, no version conflicts.
+
+Implementation: BM25 in 30 Lines
+A production BM25 search for product catalogs:
+
+import math
+from collections import Counter
+
+class BM25:
+    def __init__(self, documents, k1=1.5, b=0.75):
+        self.k1, self.b = k1, b
+        self.docs = documents
+        self.avgdl = sum(len(d.split()) for d in documents) / len(documents)
+        self.df = Counter()
+        for doc in documents:
+            for term in set(doc.lower().split()):
+                self.df[term] += 1
+        self.N = len(documents)
+
+    def score(self, query, doc_idx):
+        doc = self.docs[doc_idx].lower().split()
+        doc_len = len(doc)
+        tf = Counter(doc)
+        score = 0
+        for term in query.lower().split():
+            if term not in self.df:
+                continue
+            idf = math.log((self.N - self.df[term] + 0.5) / (self.df[term] + 0.5) + 1)
+            term_tf = tf.get(term, 0)
+            score += idf * (term_tf * (self.k1 + 1)) / (term_tf + self.k1 * (1 - self.b + self.b * doc_len / self.avgdl))
+        return score
+
+    def search(self, query, top_k=5):
+        scores = [(i, self.score(query, i)) for i in range(self.N)]
+        return sorted(scores, key=lambda x: -x[1])[:top_k]
+ Copy
+That's it. No dependencies, no model downloads, no GPU.
+
+When to Use What
+Scenario	Recommendation
+Structured product catalog	BM25
+FAQ / documentation search	Embeddings
+Multi-language product search	BM25 + aliases
+Conversational discovery	Embeddings (or LLM re-ranking)
+Real-time (< 5ms)	BM25
+Budget-constrained	BM25
+Unstructured knowledge base	Embeddings
+Our Recommendation
+Start with BM25. It's simpler, faster, and more accurate for product search. Add multi-field weighting and category aliases for 90%+ accuracy.
+
+Add embeddings later if analytics show customers frequently use vague, intent-based queries that BM25 can't handle.
+
+Let the LLM do the heavy lifting. Your fine-tuned model already has semantic understanding. Feed it BM25 results and let it reason about which products best answer the customer's question.
