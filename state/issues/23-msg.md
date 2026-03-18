@@ -1,0 +1,195 @@
+microsoft agent framework
+
+build me the notebook and link it into the readme based on this:
+
+You are referring to the evolution of the Microsoft AI ecosystem. What started as standard **AutoGen** has rapidly evolved into a much more robust, modular, and graph-capable framework (often categorized around the `autogen-core` and **Magentic-One** architectures). 
+
+Unlike LangGraph, which passes a single "State Dictionary" from node to node, the Microsoft approach is fundamentally **conversational and event-driven**. 
+
+In this paradigm:
+* The "State" is the **Chat History**.
+* The "Gates" are **Finite State Machine (FSM) transitions** or custom Speaker Selection functions.
+* The Agents literally "talk" to each other in a Group Chat, and a Manager enforces who is allowed to speak next based on the rules we set.
+
+Here is how you build the exact same **Evaluator-Optimizer RAG Loop** using the modern Microsoft AutoGen framework, utilizing **Grok** (via xAI's OpenAI-compatible API) as the brain.
+
+***
+
+### 📓 Google Colab Notebook: True Agentic RAG with Microsoft AutoGen
+
+#### Cell 1: Install Dependencies
+We install `pyautogen` alongside our local vector database tools.
+```python
+# CELL 1: Setup & Installations
+!pip install -qU pyautogen chromadb sentence-transformers langchain-huggingface
+```
+
+#### Cell 2: Configure Grok (xAI) for AutoGen
+AutoGen natively supports OpenAI's API structure. Because xAI is fully compatible with this structure, we simply pass the `base_url` for xAI into the AutoGen config list.
+```python
+# CELL 2: Environment & LLM Configuration
+import os
+from getpass import getpass
+
+# BYOK: Enter your xAI API Key 
+os.environ["XAI_API_KEY"] = getpass("Enter your xAI API Key: ")
+
+# We configure AutoGen to use Grok by overriding the base_url
+grok_config = {
+    "config_list": [{
+        "model": "grok-2-latest",
+        "api_key": os.environ["XAI_API_KEY"],
+        "base_url": "https://api.x.ai/v1"
+    }],
+    "temperature": 0.0,
+}
+```
+
+#### Cell 3: The Vector DB & The "Tool"
+In AutoGen, agents need physical Python functions to act as tools. We define the database and then wrap the search logic in a function decorated for the Retriever Agent to use.
+```python
+# CELL 3: Initialize Vector DB & Define the Search Tool
+from langchain_community.vectorstores import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.documents import Document
+
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+docs = [
+    Document(page_content="On March 12th, the server outage was caused by a DDoS attack on the EU-East region."),
+    Document(page_content="Tuesday's 504 Gateway Timeout was traced back to a misconfigured API limit in the EU-West load balancer."),
+    Document(page_content="To fix an API limit timeout, engineers must increase the concurrent connection threshold in the AWS console."),
+]
+
+vectorstore = Chroma.from_documents(documents=docs, embedding=embeddings)
+
+# This is the tool the Retriever Agent will use
+def search_database(query: str) -> str:
+    """Searches the internal documentation for the given query and returns facts."""
+    print(f"\n[TOOL EXECUTION] Searching DB for: '{query}'")
+    results = vectorstore.similarity_search(query, k=2)
+    context = "\n".join([doc.page_content for doc in results])
+    return f"Retrieved Context:\n{context}"
+```
+
+#### Cell 4: Instantiate the Swarm (The Agents)
+We create distinct agents with specific personas. Notice how the `Judge_Agent` is specifically instructed to output "APPROVE" or "REJECT". We will use these exact words to build our routing logic in the next cell.
+```python
+# CELL 4: Define the Agents
+from autogen import AssistantAgent, UserProxyAgent, register_function
+
+# 1. The Proxy (Acts as the User / Entry Point)
+user_proxy = UserProxyAgent(
+    name="User_Proxy",
+    system_message="A proxy for the user.",
+    human_input_mode="NEVER",
+    max_consecutive_auto_reply=0
+)
+
+# 2. The Retriever (Equipped with the Search Tool)
+retriever_agent = AssistantAgent(
+    name="Retriever_Agent",
+    llm_config=grok_config,
+    system_message="You are the Researcher. When asked a question, use the `search_database` tool to find facts. Output the raw facts you find, then say 'HANDOFF TO GENERATOR'."
+)
+
+# Register the tool with the retriever
+register_function(
+    search_database, 
+    caller=retriever_agent, 
+    executor=user_proxy, 
+    name="search_database", 
+    description="Search the company database."
+)
+
+# 3. The Generator (Writes the Draft)
+generator_agent = AssistantAgent(
+    name="Generator_Agent",
+    llm_config=grok_config,
+    system_message="You are the Writer. Read the chat history. Using ONLY the facts provided by the Retriever_Agent, write a clear, concise draft answering the user's original question."
+)
+
+# 4. The Judge (The Gating Logic)
+judge_agent = AssistantAgent(
+    name="Judge_Agent",
+    llm_config=grok_config,
+    system_message=(
+        "You are the strict QA Judge. Read the user's original question, the retrieved facts, and the Generator's draft.\n"
+        "1. If the draft hallucinates or misses info, output 'REJECT:' followed by instructions on what the Retriever needs to search for next.\n"
+        "2. If the draft is perfect, output exactly 'APPROVE: TERMINATE'."
+    )
+)
+```
+
+#### Cell 5: The State Machine (Custom Speaker Selection)
+This is where the magic of the Microsoft framework shines. Instead of drawing graph edges, we write a **Python function that acts as the traffic cop**. It reads the last message sent in the group chat and dictates who is legally allowed to speak next.
+```python
+# CELL 5: The Orchestrator (State Routing Logic)
+from autogen import GroupChat, GroupChatManager
+
+def state_transition(last_speaker, groupchat):
+    messages = groupchat.messages
+    if not messages:
+        return retriever_agent
+    
+    last_message = messages[-1]["content"]
+
+    # 1. User speaks -> Retriever goes next
+    if last_speaker == user_proxy:
+        return retriever_agent
+    
+    # 2. Retriever speaks -> Generator goes next
+    elif last_speaker == retriever_agent:
+        return generator_agent
+    
+    # 3. Generator speaks -> Judge goes next to evaluate
+    elif last_speaker == generator_agent:
+        return judge_agent
+    
+    # 4. Judge speaks -> This is the GATE!
+    elif last_speaker == judge_agent:
+        if "REJECT" in last_message:
+            print("\n🚨 [GATE FAILED] Judge rejected the draft. Looping back to Retriever! 🚨")
+            return retriever_agent
+        elif "APPROVE" in last_message:
+            print("\n✅ [GATE PASSED] Output is verified.")
+            return None # Ends the chat
+            
+    return None
+
+# Build the GroupChat with our custom FSM logic
+group_chat = GroupChat(
+    agents=[user_proxy, retriever_agent, generator_agent, judge_agent],
+    messages=[],
+    max_round=12,
+    speaker_selection_method=state_transition
+)
+
+# The Manager enforces the rules
+manager = GroupChatManager(groupchat=group_chat, llm_config=grok_config)
+```
+
+#### Cell 6: Execute the Swarm
+We ask the same trick question. The Retriever will likely pull the "March" data first, the Generator will draft a flawed response, the Judge will scream "REJECT", and the system will autonomously loop back to find the "Tuesday" data.
+```python
+# CELL 6: Run the Agentic RAG Loop
+query = "What caused Tuesday's 504 timeout and in which region did it happen?"
+
+print("=== STARTING MICROSOFT AUTOGEN SWARM ===")
+# Kick off the workflow
+chat_result = user_proxy.initiate_chat(
+    manager,
+    message=query
+)
+
+print("\n=== FINAL CHAT HISTORY ENDED SUCCESSFULLY ===")
+```
+
+### The Architectural Difference: Graph vs. Conversation
+If you run this, you will notice a distinct difference in the console output compared to LangGraph. 
+
+In LangGraph, you watched data variables (`context`, `draft_answer`) update silently in the background dictionary. 
+
+In AutoGen, **you are reading a transcript of employees talking to each other.** The Retriever posts the DB results into the chat. The Generator reads the chat and posts a draft. The Judge reads the draft and replies directly to the Retriever with a critique. 
+
+This conversational approach (Treating LLMs as distinct, interacting personas rather than function nodes) is Microsoft's defining philosophy for the future of Agentic workflows.
